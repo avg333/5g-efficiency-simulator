@@ -1,6 +1,10 @@
+import entities.Bs;
+import entities.Ue;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
+import types.actionType;
+import types.stateType;
 
 import java.io.IOException;
 import java.util.Map;
@@ -19,21 +23,24 @@ public class Broker extends Thread {
     private static long contadorTareas = 0;
 
     public Broker(String[] args) {
-        imprimirComandos(args);
         int puerto = 3000;
         boolean verbosity = false;
         boolean eventos = false;
         T_FINAL = Double.parseDouble(args[0]);
 
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].equals("-p") || args[i].equals("--port"))
-                puerto = Integer.parseInt(args[++i]);
-            else if (args[i].equals("-a") || args[i].equals("--algorithm"))
-                algoritmo = args[++i].charAt(0);
-            else if (args[i].equals("-v") || args[i].equals("--verbosity"))
-                verbosity = true;
-            else if (args[i].equals("-c") || args[i].equals("--csv"))
-                eventos = true;
+        int i = 0;
+        while (i < args.length) {
+            switch (args[i]) {
+                case "-p", "--port" -> puerto = Integer.parseInt(args[++i]);
+                case "-a", "--algorithm" -> algoritmo = args[++i].charAt(0);
+                case "-v", "--verbosity" -> verbosity = true;
+                case "-c", "--csv" -> eventos = true;
+                case "-h", "--help" -> {
+                    System.out.println(HELP_MSG);
+                    System.exit(0);
+                }
+            }
+            i++;
         }
 
         System.out.println("Broker iniciado con los par�metros:\n\tport=" + puerto + " algorithm=" + algoritmo
@@ -73,9 +80,9 @@ public class Broker extends Thread {
 
         try {
 			switch (evento.getTipo()) {
-				case Evento.TRAFFIC_INGRESS -> procesarTRAFFIC_INGRESS(evento);
-				case Evento.TRAFFIC_EGRESS -> procesarTRAFFIC_EGRESS(evento);
-				case Evento.NEW_STATE -> procesarNEW_STATE(evento);
+                case TRAFFIC_INGRESS -> procesarTRAFFIC_INGRESS(evento);
+				case TRAFFIC_EGRESS -> procesarTRAFFIC_EGRESS(evento);
+				case NEW_STATE -> procesarNEW_STATE(evento);
 			}
         } catch (Exception e) {
             System.out.println("Error al intentar empaquetar/desempaquetar un mensaje. Ejecuci�n finalizada");
@@ -87,8 +94,9 @@ public class Broker extends Thread {
     private static void procesarTRAFFIC_INGRESS(Evento evento) throws IOException {
         Ue ue = (Ue) evento.getEntidad();
         MessageBufferPacker requestTI = MessagePack.newDefaultBufferPacker();
-        requestTI.packInt(Evento.TRAFFIC_INGRESS).close();
-        MessageUnpacker responseTI = ue.comunicar(requestTI);
+        int eventCode = actionType.getCodeByActionType(actionType.TRAFFIC_INGRESS);
+        requestTI.packInt(eventCode).close();
+        MessageUnpacker responseTI = ue.communicate(requestTI);
 
         long idTarea = contadorTareas++;
         double xUe = responseTI.unpackDouble();
@@ -97,25 +105,26 @@ public class Broker extends Thread {
         double delay = responseTI.unpackDouble();
         responseTI.close();
 
-        Evento trafficIngress = new Evento(Evento.TRAFFIC_INGRESS, t + delay, ue);
+        Evento trafficIngress = new Evento(actionType.TRAFFIC_INGRESS, t + delay, ue);
         listaEventos.put(trafficIngress.getId(), trafficIngress);
 
         if (size == -1)
             return;
 
-        ue.addTarea(xUe, yUe, size, delay);
+        ue.addTask(xUe, yUe, size, delay);
         Logger.logTRAFFIC_INGRESS(t, ue.getId(), xUe, yUe, idTarea, size, delay);
 
         Bs bs = obtenerBS(xUe, yUe);
         Logger.logTRAFFIC_ROUTE(t, ue.getId(), bs.getId(), idTarea, size);
 
         MessageBufferPacker requestTA = MessagePack.newDefaultBufferPacker();
-        requestTA.packInt(Evento.TRAFFIC_ARRIVE).packDouble(t).packLong(idTarea).packDouble(size);
+        eventCode = actionType.getCodeByActionType(actionType.TRAFFIC_ARRIVE);
+        requestTA.packInt(eventCode).packDouble(t).packLong(idTarea).packDouble(size);
         requestTA.close();
-        MessageUnpacker responseTA = bs.comunicar(requestTA);
+        MessageUnpacker responseTA = bs.communicate(requestTA);
 
         double q = responseTA.unpackDouble();
-        int state = responseTA.unpackInt();
+        stateType state = stateType.getStateTypeByCode(responseTA.unpackInt());
         double tTrafficEgress = responseTA.unpackDouble();
         double tNewState = responseTA.unpackDouble();
         int nextState = responseTA.unpackInt();
@@ -124,27 +133,28 @@ public class Broker extends Thread {
 
         Logger.logTRAFFIC_ARRIVAL(t, bs.getId(), idTarea, size, q, a);
 
-        if (bs.getEstado() == Bs.HISTERISIS) {
+        if (bs.getState() == stateType.HISTERISIS) {
             Logger.logNEW_STATE(t, bs.getId(), q, state);
-            listaEventos.remove(bs.getIdEventoNextState());
-        } else if (state != bs.getEstado())
+            listaEventos.remove(bs.getIdEventNextState());
+        } else if (state != bs.getState())
             Logger.logNEW_STATE(t, bs.getId(), q, state);
 
-        crearEventos(bs, tNewState, tTrafficEgress, nextState);
+        crearEventos(bs, tNewState, tTrafficEgress, stateType.getStateTypeByCode(nextState));
 
         bs.addQ(q, t);
-        bs.setEstado(state);
+        bs.setState(state);
     }
 
     private static void procesarTRAFFIC_EGRESS(Evento evento) throws IOException {
         Bs bs = (Bs) evento.getEntidad();
+        int eventCode = actionType.getCodeByActionType(actionType.TRAFFIC_EGRESS);
 
         MessageBufferPacker requestTE = MessagePack.newDefaultBufferPacker();
-        requestTE.packInt(Evento.TRAFFIC_EGRESS).packDouble(t).close();
-        MessageUnpacker responseTE = bs.comunicar(requestTE);
+        requestTE.packInt(eventCode).packDouble(t).close();
+        MessageUnpacker responseTE = bs.communicate(requestTE);
 
         double q = responseTE.unpackDouble();
-        int state = responseTE.unpackInt();
+        stateType state = stateType.getStateTypeByCode(responseTE.unpackInt());
         double tTrafficEgress = responseTE.unpackDouble();
         double tNewState = responseTE.unpackDouble();
         int nextState = responseTE.unpackInt();
@@ -155,49 +165,51 @@ public class Broker extends Thread {
 
         Logger.logTRAFFIC_EGRESS(t, bs.getId(), id, size, q, w);
 
-        if (state != bs.getEstado())
+        if (state != bs.getState())
             Logger.logNEW_STATE(t, bs.getId(), q, state);
 
-        crearEventos(bs, tNewState, tTrafficEgress, nextState);
+        crearEventos(bs, tNewState, tTrafficEgress, stateType.getStateTypeByCode(nextState));
 
         bs.addQ(q, t);
         bs.addW(w);
-        bs.setEstado(state);
+        bs.setState(state);
     }
 
     private static void procesarNEW_STATE(Evento evento) throws IOException {
         Bs bs = (Bs) evento.getEntidad();
-        int nextState = bs.getNextStateBs();
+        stateType nextState = bs.getNextStateBs();
+        int eventCode = actionType.getCodeByActionType(actionType.NEW_STATE);
+        int eventCode2 = stateType.getCodeByStateType(nextState);
 
         MessageBufferPacker requestNS = MessagePack.newDefaultBufferPacker();
-        requestNS.packInt(Evento.NEW_STATE).packInt(nextState).close();
-        MessageUnpacker responseNS = bs.comunicar(requestNS);
+        requestNS.packInt(eventCode).packInt(eventCode2).close();
+        MessageUnpacker responseNS = bs.communicate(requestNS);
 
         double q = responseNS.unpackDouble();
-        int state = responseNS.unpackInt();
+        stateType state = stateType.getStateTypeByCode(responseNS.unpackInt());
         double tTrafficEgress = responseNS.unpackDouble();
         double tNewState = responseNS.unpackDouble();
-        nextState = responseNS.unpackInt();
+        nextState = stateType.getStateTypeByCode(responseNS.unpackInt());
         responseNS.close();
 
-        if (state != bs.getEstado())
+        if (state != bs.getState())
             Logger.logNEW_STATE(t, bs.getId(), q, state);
 
         crearEventos(bs, tNewState, tTrafficEgress, nextState);
 
-        bs.setEstado(state);
+        bs.setState(state);
     }
 
-    private static void crearEventos(Bs bs, double tNewState, double tTrafficEgress, int nextState) {
+    private static void crearEventos(Bs bs, double tNewState, double tTrafficEgress, stateType nextState) {
         if (tNewState > 0) {
-            Evento newState = new Evento(Evento.NEW_STATE, t + tNewState, bs);
+            Evento newState = new Evento(actionType.NEW_STATE, t + tNewState, bs);
             listaEventos.put(newState.getId(), newState);
             bs.setNextState(nextState);
-            bs.setIdEventoNextState(newState.getId());
+            bs.setIdEventNextState(newState.getId());
         }
 
         if (tTrafficEgress > -1) {
-            Evento trafficEgress = new Evento(Evento.TRAFFIC_EGRESS, t + tTrafficEgress, bs);
+            Evento trafficEgress = new Evento(actionType.TRAFFIC_EGRESS, t + tTrafficEgress, bs);
             listaEventos.put(trafficEgress.getId(), trafficEgress);
         }
     }
@@ -229,30 +241,9 @@ public class Broker extends Thread {
     }
 
     public static double vectorDeDistancias(double xUe, double yUe, double xBs, double yBs) {
-        double cateto1 = xUe - xBs;
-        double cateto2 = yUe - yBs;
-        double hipotenusa = Math.sqrt(cateto1 * cateto1 + cateto2 * cateto2);
-        return hipotenusa;
-    }
-
-    private static void imprimirComandos(String[] args) {
-
-        for (int i = 0; i < args.length; i++)
-            if (args[i].equals("-h") || args[i].equals("--help")) {
-                System.out.println("Argumentos obligatorios:\n" + "\t<T_FINAL>\n" + "Argumentos opcionales:\n"
-                        + "\t[-p|--port <PUERTO>] [-a|--algorithm <ALGORITMO>] [-v|--verbosity] [-c|--csv] [-h|--help]\n"
-                        + "Informaci�n sobre los argumentos:\n"
-                        + "\t<T_FINAL>\tValor m�ximo de tiempo que puede alcanzar la simulaci�n.\n"
-                        + "\t-p|--port <PUERTO>\n"
-                        + "\t\t\tCambia el puerto en el que se esperan comunicaciones de las entidades.\n"
-                        + "\t\t\tValor por defecto: 3000.\n" + "\t-a|--algorithm <ALGORITMO>\n"
-                        + "\t\t\tDefine el algoritmo a usar para el encaminamiento de tareas. Valores permitidos:\n"
-                        + "\t\t\t\tv[ector de distancias]\n" + "\t\t\tValor por defecto: v.\n"
-                        + "\t-c|--csv\tGenera un archivo csv al final de la simulaci�n con todos los eventos y su informaci�n.\n"
-                        + "\t-v|--verbosity\tImprime por consola los eventos con su informaci�n a medida que suceden en la simulaci�n.\n"
-                        + "\t-h|--help\tImprime por consola la lista de posibles argumentos con su explicaci�n.\n");
-                System.exit(0);
-            }
+        final double cateto1 = xUe - xBs;
+        final double cateto2 = yUe - yBs;
+        return Math.sqrt(cateto1 * cateto1 + cateto2 * cateto2);
     }
 
     @Override
@@ -262,16 +253,35 @@ public class Broker extends Thread {
         in.close();
         HiloServidorRegistro.cerrarServidorRegistro();
 
-        long start = System.currentTimeMillis();
+        final long start = System.currentTimeMillis();
         while (t <= T_FINAL) {
-            Evento evento = obtenerProximoEvento();
+            final Evento evento = obtenerProximoEvento();
             procesarEvento(evento);
             Logger.printProgress(t, T_FINAL);
         }
-        long finish = System.currentTimeMillis();
+        final long finish = System.currentTimeMillis();
 
         HiloServidorRegistro.cerrarSockets();
         Logger.imprimirResultados(finish - start);
     }
+
+
+    private static final String HELP_MSG ="""
+                        Argumentos obligatorios:
+                        \t<T_FINAL>
+                         Argumentos opcionales:
+                        \t[-p|--port <PUERTO>] [-a|--algorithm <ALGORITMO>] [-v|--verbosity] [-c|--csv] [-h|--help]
+                        "Informaci�n sobre los argumentos:
+                        \t<T_FINAL>\tValor m�ximo de tiempo que puede alcanzar la simulaci�n.
+                        \t-p|--port <PUERTO>
+                        \t\t\tCambia el puerto en el que se esperan comunicaciones de las entidades.
+                        \t\t\tValor por defecto: 3000.
+                        \t-a|--algorithm <ALGORITMO>
+                        \t\t\tDefine el algoritmo a usar para el encaminamiento de tareas. Valores permitidos:
+                        \t\t\t\tv[ector de distancias]
+                        \t\t\tValor por defecto: v.
+                        \t-c|--csv\tGenera un archivo csv al final de la simulaci�n con todos los eventos y su informaci�n.
+                        \t-v|--verbosity\tImprime por consola los eventos con su informaci�n a medida que suceden en la simulaci�n.
+                        \t-h|--help\tImprime por consola la lista de posibles argumentos con su explicaci�n.""";
 
 }

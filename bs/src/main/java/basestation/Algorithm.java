@@ -1,21 +1,8 @@
+package basestation;
+
+import types.stateType;
+
 import java.util.Map;
-
-enum modeType {
-    NO_COALESCING(1), SIZE_BASED_COALESCING(4), TIME_BASED_COALESCING(5), FIXED_COALESCING(-1), UNADMITTED(0);
-
-    private final int value;
-
-    modeType(final int value) {
-        this.value = value;
-    }
-
-    public static modeType getModeTypeByCode(final char code) {
-        for (modeType e : modeType.values()) {
-            if (code == e.value) return e;
-        }
-        return UNADMITTED;
-    }
-}
 
 public class Algorithm {
 
@@ -45,7 +32,7 @@ public class Algorithm {
         if (bs.state == stateType.ON && bs.listaTasksPendientes.isEmpty() && !bs.procesando) {
             if (bs.tToOff == 0 && bs.tHysterisis == 0) {
                 bs.state = stateType.OFF;
-                if (bs.algorithm == modeType.FIXED_COALESCING) {
+                if (bs.algorithm == algorithmMode.FIXED_COALESCING) {
                     bs.nextState = stateType.OFF;
                     tNewState = bs.algorithmParam;
                 }

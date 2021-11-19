@@ -1,3 +1,7 @@
+import entities.Bs;
+import entities.Ue;
+import types.stateType;
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -161,23 +165,23 @@ public class Logger {
 					+ SEPARADOR);
 	}
 
-	public static void logNEW_STATE(double t, int idBs, double q, int estadoBs) {
+	public static void logNEW_STATE(double t, int idBs, double q, stateType estadoBs) {
 		String state = "";
 		switch (estadoBs) {
-		case Bs.ON:
+		case ON:
 			state = "on";
 			break;
-		case Bs.OFF:
+		case OFF:
 			state = "off";
 			break;
-		case Bs.TO_ON:
+		case TO_ON:
 			state = "to_on";
 			break;
-		case Bs.TO_OFF:
+		case TO_OFF:
 			state = "to_off";
 			break;
-		case Bs.HISTERISIS:
-		case Bs.WAITING_TO_ON:
+		case HISTERISIS:
+		case WAITING_TO_ON:
 			return;
 		}
 

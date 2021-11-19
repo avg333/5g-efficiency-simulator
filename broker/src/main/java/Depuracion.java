@@ -1,3 +1,6 @@
+import entities.Bs;
+import entities.Ue;
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;

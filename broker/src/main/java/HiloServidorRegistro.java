@@ -4,9 +4,12 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.Map;
 
+import entities.Bs;
+import entities.Ue;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
+import types.actionType;
 
 public class HiloServidorRegistro extends Thread {
 
@@ -46,13 +49,13 @@ public class HiloServidorRegistro extends Thread {
 				if (tipoEntidad == UE) {
 					Ue ue = new Ue(id, x, y, sc, dp.getAddress(), dp.getPort());
 					Broker.listaUE.put(ue.getId(), ue);
-					Evento trafficIngress = new Evento(Evento.TRAFFIC_INGRESS, Broker.t, ue);
+					Evento trafficIngress = new Evento(actionType.TRAFFIC_INGRESS, Broker.t, ue);
 					Broker.listaEventos.put(trafficIngress.getId(), trafficIngress);
 					System.out.print(" UE_" + id);
 				} else if (tipoEntidad == BS) {
 					Bs bs = new Bs(id, x, y, sc, dp.getAddress(), dp.getPort());
 					Broker.listaBS.put(bs.getId(), bs);
-					Evento newState = new Evento(Evento.NEW_STATE, Broker.t, bs);
+					Evento newState = new Evento(actionType.NEW_STATE, Broker.t, bs);
 					Broker.listaEventos.put(newState.getId(), newState);
 					System.out.print(" BS_" + id);
 				}
@@ -82,10 +85,10 @@ public class HiloServidorRegistro extends Thread {
 	public static void cerrarSockets() {
 		try {
 			for (Map.Entry<Integer, Bs> entry : Broker.listaBS.entrySet())
-				entry.getValue().cerrarSocket();
+				entry.getValue().closeSocket();
 
 			for (Map.Entry<Integer, Ue> entry : Broker.listaUE.entrySet())
-				entry.getValue().cerrarSocket();
+				entry.getValue().closeSocket();
 
 			sc.close();
 		} catch (Exception e) {

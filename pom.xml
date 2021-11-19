@@ -12,6 +12,7 @@
         <module>broker</module>
         <module>bs</module>
         <module>ue</module>
+        <module>common</module>
     </modules>
 
     <dependencies>
