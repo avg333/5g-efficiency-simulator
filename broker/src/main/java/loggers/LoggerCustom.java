@@ -1,6 +1,8 @@
+package loggers;
+
 import entities.Bs;
 import entities.Ue;
-import types.stateType;
+import types.StateType;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -12,7 +14,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 
-public class Logger {
+public class LoggerCustom {
 
 	private static final int AVANCE = 1;
 	private static final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
@@ -30,8 +32,8 @@ public class Logger {
 	private static ArrayList<String> listaEventos = new ArrayList<>();
 
 	public static void setSettings(boolean verbosity, boolean eventos) {
-		Logger.verbosity = verbosity;
-		Logger.eventos = eventos;
+		LoggerCustom.verbosity = verbosity;
+		LoggerCustom.eventos = eventos;
 	}
 
 	public static void printProgress(double current, double total) {
@@ -55,47 +57,47 @@ public class Logger {
 		System.out.print(string);
 	}
 
-	public static void imprimirResultados(long elapsedTime) {
+	public static void imprimirResultados(long elapsedTime, double t, Map<Integer, Bs> listaBS, Map<Integer, Ue> listaUE) {
 		System.out.println("\nFin de la simulaci�n. Tiempo de ejecuci�n: " + elapsedTime / 1000 + "s");
-		imprimirResumen(elapsedTime);
+		imprimirResumen(elapsedTime, t, listaBS, listaUE);
 		imprimirEventos();
 	}
 
-	public static void imprimirResumen(long elapsedTime) {
+	public static void imprimirResumen(long elapsedTime, double t, Map<Integer, Bs> listaBS, Map<Integer, Ue> listaUE) {
 		double eQ = 0, eW = 0, eL = 0, eA = 0;
 
-		for (Map.Entry<Integer, Bs> entry : Broker.listaBS.entrySet()) {
+		for (Map.Entry<Integer, Bs> entry : listaBS.entrySet()) {
 			Bs bsAux = entry.getValue();
 			eQ += bsAux.getEq();
 			eW += bsAux.getEw();
 		}
 
-		eQ = eQ / Broker.listaBS.size();
-		eW = eW / Broker.listaBS.size();
+		eQ = eQ / listaBS.size();
+		eW = eW / listaBS.size();
 
-		for (Map.Entry<Integer, Ue> entry : Broker.listaUE.entrySet()) {
+		for (Map.Entry<Integer, Ue> entry : listaUE.entrySet()) {
 			Ue ueAux = entry.getValue();
 			eL += ueAux.geteL();
 			eA += ueAux.geteA();
 		}
 
-		eL = eL / Broker.listaUE.size();
-		eA = eA / Broker.listaUE.size();
+		eL = eL / listaUE.size();
+		eA = eA / listaUE.size();
 
 		try {
 			BufferedWriter writer = new BufferedWriter(new FileWriter("resumen_" + formatter.format(date) + ".txt"));
 			writer.write("Resumen simulaci�n " + formatter.format(date) + ":\n");
-			writer.write("Log: " + verbosity + ". Eventos: " + eventos + ". T final: " + DF_LOG.format(Broker.t)
+			writer.write("Log: " + verbosity + ". Eventos: " + eventos + ". T final: " + DF_LOG.format(t)
 					+ ". Tiempo de simulaci�n: " + DF_LOG.format(elapsedTime / 1000) + "s.\n");
-			writer.write("N: " + Broker.listaBS.size() + ". E[Q] Global: " + DF_LOG.format(eQ) + ". E[W] Global: "
+			writer.write("N: " + listaBS.size() + ". E[Q] Global: " + DF_LOG.format(eQ) + ". E[W] Global: "
 					+ DF_LOG.format(eW) + ".\n");
-			for (Map.Entry<Integer, Bs> entry : Broker.listaBS.entrySet())
+			for (Map.Entry<Integer, Bs> entry : listaBS.entrySet())
 				writer.write(
 						"\tBS ID: " + entry.getValue().getId() + " E[Q]: " + DF_LOG.format(entry.getValue().getEq())
 								+ " E[W]: " + DF_LOG.format(entry.getValue().getEw()) + ".\n");
-			writer.write("m: " + Broker.listaUE.size() + ". E[L] Global: " + DF_LOG.format(eL) + ". E[A] Global: "
+			writer.write("m: " + listaUE.size() + ". E[L] Global: " + DF_LOG.format(eL) + ". E[A] Global: "
 					+ DF_LOG.format(eA) + ".\n");
-			for (Map.Entry<Integer, Ue> entry : Broker.listaUE.entrySet())
+			for (Map.Entry<Integer, Ue> entry : listaUE.entrySet())
 				writer.write(
 						"\tUE ID: " + entry.getValue().getId() + " E[L]: " + DF_LOG.format(entry.getValue().geteL())
 								+ " E[A]: " + DF_LOG.format(entry.getValue().geteA()) + ".\n");
@@ -121,7 +123,7 @@ public class Logger {
 	}
 
 	public static void logTRAFFIC_INGRESS(double t, int idUe, double xUe, double yUe, long idTarea, double size,
-			double delay) {
+										  double delay) {
 		if (verbosity)
 			System.out.println(DF_LOG.format(t) + " UE " + idUe + " TRAFFIC_INGRESS id=" + idTarea + " size="
 					+ DF_LOG.format(size) + " next=" + DF_LOG.format(delay) + " x=" + DF_LOG.format(xUe) + " y="
@@ -154,7 +156,7 @@ public class Logger {
 	}
 
 	public static void logTRAFFIC_EGRESS(double t, int idBs, long idDemanda, double cantidad, double cola,
-			double wait) {
+										 double wait) {
 		if (verbosity)
 			System.out.println(DF_LOG.format(t) + " BS " + idBs + " TRAFFIC_EGRESS id=" + idDemanda + " size="
 					+ DF_LOG.format(cantidad) + " q=" + DF_LOG.format(cola) + " wait=" + DF_LOG.format(wait));
@@ -165,24 +167,24 @@ public class Logger {
 					+ SEPARADOR);
 	}
 
-	public static void logNEW_STATE(double t, int idBs, double q, stateType estadoBs) {
+	public static void logNEW_STATE(double t, int idBs, double q, StateType estadoBs) {
 		String state = "";
 		switch (estadoBs) {
-		case ON:
-			state = "on";
-			break;
-		case OFF:
-			state = "off";
-			break;
-		case TO_ON:
-			state = "to_on";
-			break;
-		case TO_OFF:
-			state = "to_off";
-			break;
-		case HISTERISIS:
-		case WAITING_TO_ON:
-			return;
+			case ON:
+				state = "on";
+				break;
+			case OFF:
+				state = "off";
+				break;
+			case TO_ON:
+				state = "to_on";
+				break;
+			case TO_OFF:
+				state = "to_off";
+				break;
+			case HYSTERESIS:
+			case WAITING_TO_ON:
+				return;
 		}
 
 		if (verbosity)

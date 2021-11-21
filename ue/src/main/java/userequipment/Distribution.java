@@ -4,12 +4,12 @@ import java.util.Random;
 
 public class Distribution {
     private final Random rand = new Random();
-    private final distributionMode mode;
+    private final DistributionMode distributionMode;
     private final double param1;
     private final double param2;
 
-    public Distribution(distributionMode mode, double param1, double param2) {
-        this.mode = mode;
+    public Distribution(DistributionMode distributionMode, double param1, double param2) {
+        this.distributionMode = distributionMode;
         this.param1 = param1;
         this.param2 = param2;
     }
@@ -19,12 +19,17 @@ public class Distribution {
     }
 
     public double getRandom() {
-        return switch (mode) {
+        return switch (distributionMode) {
             case DETERMINISTIC -> param1;
             case UNIFORM -> rand.nextDouble() * (param1 - param2) + param2;
             case EXPONENTIAL -> param1 != 0 ? Math.log(1 - rand.nextDouble()) / (-param1) : 0;
             case UNADMITTED -> 0;
         };
+    }
+
+    @Override
+    public String toString() {
+        return "mode=" + distributionMode + ", param1=" + param1 + ", param2=" + param2;
     }
 
 }

@@ -1,25 +1,28 @@
 package entities;
 
-import types.stateType;
+import types.StateType;
 
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
 public class Bs extends Entity {
 
+	private static int idCounter = 0;
+
 	private double q = 0.0;
 	private double eW = 0.0;
 	private double eQ = 0.0;
 
-	private stateType state = stateType.UNADMITTED;
-	private stateType nextStateBs = stateType.OFF;
+	private StateType state = StateType.UNADMITTED;
+	private StateType nextStateBs = StateType.OFF;
 	private long idEventNextState;
 	private long wCounter = 0;
 	private double qAux = 0.0;
 	private double tAux = 0.0;
 
-	public Bs(int id, double x, double y, DatagramSocket sc, InetAddress ad, int puerto) {
-		super(id, x, y, sc, ad, puerto);
+	public Bs(double x, double y, DatagramSocket sc, InetAddress ad, int puerto) {
+		super(x, y, sc, ad, puerto);
+		this.setId(idCounter++);
 	}
 
 	public double getQ() {
@@ -34,19 +37,19 @@ public class Bs extends Entity {
 		return tAux != 0 ? (eQ / tAux) : 0;
 	}
 
-	public stateType getState() {
+	public StateType getState() {
 		return state;
 	}
 
-	public void setState(stateType state) {
+	public void setState(StateType state) {
 		this.state = state;
 	}
 
-	public stateType getNextStateBs() {
+	public StateType getNextStateBs() {
 		return nextStateBs;
 	}
 
-	public void setNextState(stateType nextStateBs) {
+	public void setNextState(StateType nextStateBs) {
 		this.nextStateBs = nextStateBs;
 	}
 

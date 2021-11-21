@@ -1,16 +1,16 @@
 package userequipment;
 
-enum distributionMode {
+enum DistributionMode {
     DETERMINISTIC('d'), UNIFORM('u'), EXPONENTIAL('e'), UNADMITTED('x');
 
     private final char value;
 
-    distributionMode(final char value) {
+    DistributionMode(final char value) {
         this.value = value;
     }
 
-    public static distributionMode getDistributionModeByCode(char code) {
-        for (distributionMode e : distributionMode.values()) {
+    public static DistributionMode getDistributionModeByCode(char code) {
+        for (DistributionMode e : DistributionMode.values()) {
             if (code == e.value) return e;
         }
         return UNADMITTED;

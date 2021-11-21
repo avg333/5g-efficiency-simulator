@@ -1,151 +1,180 @@
 package basestation;
 
-import org.msgpack.core.MessageBufferPacker;
-import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
-import types.Communicator;
-import types.actionType;
-import types.communicatorType;
-import types.stateType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import types.CommunicatorType;
+import types.EventType;
+import types.StateType;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.MessageFormat;
+import java.util.Properties;
 import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 
 public class BaseStation extends Thread {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BaseStation.class);
+    private static final String PROP_FILE_NAME = "config.properties";
 
-    private static final Logger logger = Logger.getLogger(BaseStation.class.getName());
-    private static final String HELP_MSG = """
-            Argumentos obligatorios:
-            \t<ID> <X> <Y>
-            Argumentos opcionales:
-            \t[--host <IP> <PUERTO>] [-s|--size <DISTR> <PARAM1> <PARAM2>] [-d|--delay <DISTR> <PARAM1> <PARAM2>]
-            \t[-m|--mobility <DISTR> <PARAM1> <PARAM2>] [--seed <SEMILLA>] [-h|--help]
-            Información sobre los argumentos:
-            \t<ID>\t\tDefine el ID con el cual se identifica la entity UE.
-            \t<X>\t\tDefine la coordenada X inicial donde se sitúa la entity UE.
-            \t<Y>\t\tDefine la coordenada Y inicial donde se sitúa la entity UE.
-            \t--host <IP> <PUERTO>
-            \t\t\tDefine la IP o el nombre del host donde está ubicado el broker y su puerto.
-            \t\t\tValor por defecto: localhost 3000.
-            \t-s|--size <DISTR> <PARAM1> <PARAM2>
-            \t\t\tDefine cómo se obtiene el valor tiempo demandado.
-            \t\t\tValores permitidos para DISTR:
-            \t\t\t\td[eterminista]\tsize=PARAM1
-            \t\t\t\tu[niforme]\tE[size]=(PARAM1+PARAM2)/2
-            \t\t\t\te[xponencial]\tE[size]=1/PARAM1
-            \t\t\tValor por defecto: e 1 0.
-            \t-d|--delay <DISTR> <PARAM1> <PARAM2>
-            \t\t\tDefine cómo se obtiene el valor tiempo entre llegadas.
-            \t\t\tValores permitidos para DISTR:
-            \t\t\t\td[eterminista]\tdelay=PARAM1
-            \t\t\t\tu[niforme]\tE[delay]=(PARAM1+PARAM2)/2
-            \t\t\t\te[xponencial]\tE[delay]=1/PARAM1
-            \t\t\tValor por defecto: e 1 0.
-            \t-m|--mobility <DISTR> <PARAM1> <PARAM2>
-            \t\t\tDefine cómo se obtiene el valor del desplazamiento entre generaciones.
-            \t\t\tValores permitidos para DISTR:
-            \t\t\t\td[eterminista]\tmobility=PARAM1
-            \t\t\t\tu[niforme]\tE[mobility]=(PARAM1+PARAM2)/2
-            \t\t\t\te[xponencial]\tE[mobility]=1/PARAM1
-            \t\t\tValor por defecto: d 0 0.
-            \t--seed <SEMILLA>La generación de números aleatorios estará basada en una semilla con valor=SEMILLA+ID.
-            \t\t\tValor por defecto: La generación de números aleatorios no se basa en ninguna semilla.
-            \t-h|--help\tImprime por consola la lista de posibles argumentos con su explicación.
-            """;
-    public final TreeMap<Long, Task> listaTasksPendientes = new TreeMap<>();
-    protected double c = 1;
-    protected double tToOff = 0;
-    protected double tToOn = 0;
-    protected double tHysterisis = 0;
-    protected double algorithmParam = 1;
-    protected algorithmMode algorithm = algorithmMode.NO_COALESCING;
-    protected double q = 0;
-    protected stateType state;
-    protected stateType nextState;
-    protected boolean procesando = false;
-    protected Task currentTask;
-    private Communicator communicator;
+    private final TreeMap<Long, Task> tasksPending = new TreeMap<>();
+    private final double c;
+    private final double tToOff;
+    private final double tToOn;
+    private final double tHysteresis;
+    private final Algorithm algorithm;
+    private final CommunicatorBs communicator;
 
-    public BaseStation(String[] args) {
-        String ipBroker = "localhost";
-        int puertoBroker = 3000;
-        int id = Integer.parseInt(args[0]);
-        double x = Double.parseDouble(args[1]);
-        double y = Double.parseDouble(args[2]);
+    private double q = 0;
+    private StateType state = StateType.OFF;
+    private StateType nextState = StateType.OFF;
+    private boolean processing = false;
+    private Task currentTask;
 
-        int i = 0;
-        while (i < args.length) {
-            switch (args[i]) {
-                case "--host" -> {
-                    ipBroker = args[++i];
-                    puertoBroker = Integer.parseInt(args[++i]);
-                }
-                case "-a", "--algorithm" -> {
-                    algorithm = algorithmMode.getModeTypeByCode(args[++i].charAt(0));
-                    algorithmParam = Double.parseDouble(args[++i]);
-                }
-                case "-t", "--times" -> {
-                    tToOff = Double.parseDouble(args[++i]);
-                    tToOn = Double.parseDouble(args[++i]);
-                    tHysterisis = Double.parseDouble(args[++i]);
-                }
-                case "-c", "--capacity" -> c = Double.parseDouble(args[++i]);
-                case "-h", "--help" -> {
-                    logger.log(Level.INFO, HELP_MSG);
-                    return;
-                }
-            }
-            i++;
+    public BaseStation() {
+        final Properties prop = new Properties();
+
+        try (final InputStream inputStream = getClass().getClassLoader().getResourceAsStream(PROP_FILE_NAME)) {
+            prop.load(inputStream);
+        } catch (Exception e) {
+            LOGGER.error("Error loading the properties. Execution completed", e);
+            System.exit(-1);
         }
 
+        final char algorithmModeChar = prop.getProperty("algorithmMode").charAt(0);
+        final AlgorithmMode mode = AlgorithmMode.getModeTypeByCode(algorithmModeChar);
+        final double algorithmParam = Double.parseDouble(prop.getProperty("algorithmParam"));
+
+        final String ipBroker = prop.getProperty("ipBroker");
+        final int portBroker = Integer.parseInt(prop.getProperty("portBroker"));
+        final double x = Double.parseDouble(prop.getProperty("x"));
+        final double y = Double.parseDouble(prop.getProperty("y"));
+        c = Double.parseDouble(prop.getProperty("c"));
+        tToOff = Double.parseDouble(prop.getProperty("tToOff"));
+        tToOn = Double.parseDouble(prop.getProperty("tToOn"));
+        tHysteresis = Double.parseDouble(prop.getProperty("tHysteresis"));
+        algorithm = new Algorithm(this, mode, algorithmParam);
+
+        communicator = new CommunicatorBs(CommunicatorType.BASE_STATION, ipBroker, portBroker, x, y);
+
         final String msg = MessageFormat.format("""
-                        userequipment.UserEquipment iniciado con los parámetros:
-                        \tid={} x={} y={} host={} port={} capacity={}
-                        \ttToOff={} tToOn={} tHysteresis={}
-                        \talgorithm={} algorithmParam={}""",
-                id, x, y, ipBroker, puertoBroker, c, tToOff, tToOn, tHysterisis, algorithm, algorithmParam);
+                        {0} started with parameters:
+                        \tcommunications: {1}
+                        \tposition: x={2} y={3}
+                        \tsettings: c={4} tToOff={5} tToOn={6} tHysteresis={7}
+                        \talgorithm: {8}""",
+                CommunicatorType.BASE_STATION, communicator.toString(), x, y,
+                c, tToOff, tToOn, tHysteresis, algorithm.toString());
 
-        logger.log(Level.CONFIG, msg);
-
-        communicator = new Communicator(communicatorType.BASE_STATION, ipBroker, puertoBroker, id, x, y);
+        LOGGER.info(msg);
     }
 
     public static void main(String[] args) {
-        new BaseStation(args).start();
+        new BaseStation().start();
+    }
+
+    public double getC() {
+        return c;
+    }
+
+    public double gettToOff() {
+        return tToOff;
+    }
+
+    public double gettToOn() {
+        return tToOn;
+    }
+
+    public double gettHysteresis() {
+        return tHysteresis;
+    }
+
+    public double getQ() {
+        return q;
+    }
+
+    public void setQ(double q) {
+        this.q = q;
+    }
+
+    public StateType getStateX() {
+        return state;
+    }
+
+    public void setState(StateType state) {
+        this.state = state;
+    }
+
+    public void setNextState(StateType nextState) {
+        this.nextState = nextState;
+    }
+
+    public boolean isProcessing() {
+        return processing;
+    }
+
+    public void setProcessing(boolean processing) {
+        this.processing = processing;
+    }
+
+    public Task getCurrentTask() {
+        return currentTask;
+    }
+
+    public void setCurrentTask(Task currentTask) {
+        this.currentTask = currentTask;
+    }
+
+    public TreeMap<Long, Task> getTasksPending() {
+        return tasksPending;
     }
 
     @Override
     public void run() {
 
         while (true) {
-            final MessageUnpacker message = communicator.receiveMessage();
+            final MessageUnpacker message = communicator.receiveMessage(50);
 
             try {
-                final actionType action = actionType.getActionTypeByCode(message.unpackInt());
+                final int type = message.unpackInt();
+                final EventType action = EventType.getActionTypeByCode(type);
 
                 switch (action) {
-                    case TRAFFIC_ARRIVE -> processTrafficArrival(message);
-                    case TRAFFIC_EGRESS -> processTrafficEgress(message);
-                    case NEW_STATE -> processNewState(message);
+                    case TRAFFIC_ARRIVE -> {
+                        final double t = message.unpackDouble();
+                        final long id = message.unpackLong();
+                        final double size = message.unpackDouble();
+                        message.close();
+
+                        processTrafficArrival(t, id, size);
+                    }
+                    case TRAFFIC_EGRESS -> {
+                        final double t = message.unpackDouble();
+                        message.close();
+
+                        processTrafficEgress(t);
+                    }
+                    case NEW_STATE -> {
+                        final int stateReceivedInt = message.unpackInt();
+                        message.close();
+                        final StateType stateReceived = StateType.getStateTypeByCode(stateReceivedInt);
+
+                        processNewState(stateReceived);
+                    }
                     case CLOSE -> {
                         communicator.close();
                         return;
                     }
-                    case UNADMITTED -> {
-                        final String msg = "Received type of message not supported. Execution completed";
-                        logger.log(Level.SEVERE, msg);
+                    default -> {
+                        LOGGER.error("Received type of message not supported. Execution completed");
                         communicator.close();
                         System.exit(-1);
                     }
                 }
 
-            } catch (Exception e) {
-                final String msg = "An attempt to pack / unpack a message failed. Execution completed";
-                logger.log(Level.SEVERE, msg);
+            } catch (IOException e) {
+                LOGGER.error("An attempt to pack / unpack a message failed. Execution completed", e);
                 communicator.close();
                 System.exit(-1);
             }
@@ -154,88 +183,49 @@ public class BaseStation extends Thread {
 
     }
 
-    public void processTrafficArrival(MessageUnpacker request) throws IOException {
-
-        final double t = request.unpackDouble();
-        final long id = request.unpackLong();
-        final double size = request.unpackDouble();
-        request.close();
-
+    public void processTrafficArrival(final double t, final long id, final double size) {
         final Task task = new Task(id, size, t);
-        listaTasksPendientes.put(id, task);
+        tasksPending.put(id, task);
         q += size;
 
-        final double tNewState = Algorithm.activationAlgorithm(this, false);
-        final double tTrafficEgress = Algorithm.processingAlgorithm(this);
+        final double tNewState = algorithm.activationAlgorithm(false);
+        final double tTrafficEgress = algorithm.processingAlgorithm();
         final double a = Task.getDelay(t);
 
-        try (MessageBufferPacker response = MessagePack.newDefaultBufferPacker()) {
-            response.packDouble(q);
-            response.packInt(stateType.getCodeByStateType(state));
-            response.packDouble(tTrafficEgress);
-            response.packDouble(tNewState);
-            response.packInt(stateType.getCodeByStateType(nextState));
-            response.packDouble(a).close();
-            communicator.sendMessage(response);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+        communicator.sendTrafficArrival(q, state, tTrafficEgress, tNewState, nextState, a);
     }
 
-    public void processTrafficEgress(MessageUnpacker request) throws IOException {
+    public void processTrafficEgress(final double t) {
+        final long id = currentTask.getId();
+        final double size = currentTask.getSize();
+        final double w = t - currentTask.getArrive() - currentTask.getSize() / c;
 
-        double t = request.unpackDouble();
-        request.close();
-        long id = currentTask.getId();
-        double size = currentTask.getSize();
-        double w = t - currentTask.gettArrive() - currentTask.getSize() / c;
+        processing = false;
 
-        procesando = false;
+        final double tNewState = algorithm.suspensionAlgorithm();
+        final double tTrafficEgress = algorithm.processingAlgorithm();
 
-        double tNewState = Algorithm.suspensionAlgorithm(this);
-        double tTrafficEgress = Algorithm.processingAlgorithm(this);
-
-        try (MessageBufferPacker response = MessagePack.newDefaultBufferPacker()) {
-            response.packDouble(q).packInt(stateType.getCodeByStateType(state)).packDouble(tTrafficEgress).packDouble(tNewState).packInt(stateType.getCodeByStateType(nextState))
-                    .packDouble(w).packLong(id).packDouble(size).close();
-            communicator.sendMessage(response);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        communicator.sendTrafficEgress(q, state, tTrafficEgress, tNewState, nextState, w, id, size);
     }
 
-    public void processNewState(MessageUnpacker request) throws IOException {
-
-        int stateReceivedInt = request.unpackInt();
-        request.close();
-
+    public void processNewState(final StateType stateReceived) {
         double tNewState = 0;
-
-        final stateType stateReceived = stateType.getStateTypeByCode(stateReceivedInt);
 
         switch (stateReceived) {
             case TO_OFF -> {
-                nextState = stateType.OFF;
+                nextState = StateType.OFF;
                 tNewState = tToOff;
             }
             case TO_ON -> {
-                nextState = stateType.ON;
+                nextState = StateType.ON;
                 tNewState = tToOn;
             }
-            case OFF -> tNewState = Algorithm.activationAlgorithm(this, true);
+            case OFF -> tNewState = algorithm.activationAlgorithm(true);
         }
 
-        double tTrafficEgress = Algorithm.processingAlgorithm(this);
+        final double tTrafficEgress = algorithm.processingAlgorithm();
 
-        try (MessageBufferPacker response = MessagePack.newDefaultBufferPacker()) {
-            response.packDouble(q).packInt(stateType.getCodeByStateType(stateReceived)).packDouble(tTrafficEgress).packDouble(tNewState).packInt(stateType.getCodeByStateType(nextState))
-                    .close();
-            communicator.sendMessage(response);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+        communicator.sendNewState(q, stateReceived, tTrafficEgress, tNewState, nextState);
     }
 
 }

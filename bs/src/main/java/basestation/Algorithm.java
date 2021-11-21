@@ -1,159 +1,174 @@
 package basestation;
 
-import types.stateType;
+import types.StateType;
 
 import java.util.Map;
+import java.util.TreeMap;
 
-public class Algorithm {
+public record Algorithm(BaseStation bs, AlgorithmMode mode, double algorithmParam) {
 
-    private Algorithm() {
-    }
-
-    public static double processingAlgorithm(BaseStation bs) {
+    public double processingAlgorithm() {
         double tProcess = -1;
 
-        if (!bs.procesando && !bs.listaTasksPendientes.isEmpty() && bs.state == stateType.ON) {
-            bs.currentTask = bs.listaTasksPendientes.pollFirstEntry().getValue();
-            bs.procesando = true;
-            tProcess = bs.currentTask.getSize() / bs.c;
+        final boolean bsProcessing = this.bs.isProcessing();
+        final TreeMap<Long, Task> tasksPending = this.bs.getTasksPending();
+        final StateType bsState = this.bs.getStateX();
 
-            if (!bs.listaTasksPendientes.isEmpty())
-                bs.q -= bs.currentTask.getSize();
-            else
-                bs.q = 0.0;
+        if (!bsProcessing && !tasksPending.isEmpty() && bsState == StateType.ON) {
+            final Task task = tasksPending.pollFirstEntry().getValue();
+            this.bs.setCurrentTask(task);
+            this.bs.setProcessing(true);
+            tProcess = task.getSize() / this.bs.getC();
+
+            if (!tasksPending.isEmpty()) {
+                double q = this.bs.getQ();
+                final Task taskCurrent = this.bs.getCurrentTask();
+                q -= taskCurrent.getSize();
+                this.bs.setQ(q);
+            } else
+                this.bs.setQ(0.0);
         }
 
         return tProcess;
     }
 
-    public static double suspensionAlgorithm(BaseStation bs) {
+    public double suspensionAlgorithm() {
         double tNewState = 0;
 
-        if (bs.state == stateType.ON && bs.listaTasksPendientes.isEmpty() && !bs.procesando) {
-            if (bs.tToOff == 0 && bs.tHysterisis == 0) {
-                bs.state = stateType.OFF;
-                if (bs.algorithm == algorithmMode.FIXED_COALESCING) {
-                    bs.nextState = stateType.OFF;
-                    tNewState = bs.algorithmParam;
+        final boolean bsProcessing = this.bs.isProcessing();
+        final TreeMap<Long, Task> tasksPending = this.bs.getTasksPending();
+        final StateType bsState = this.bs.getStateX();
+
+        if (bsState == StateType.ON && tasksPending.isEmpty() && !bsProcessing) {
+            if (this.bs.gettToOff() == 0 && this.bs.gettHysteresis() == 0) {
+                this.bs.setState(StateType.OFF);
+                if (mode == AlgorithmMode.FIXED_COALESCING) {
+                    this.bs.setNextState(StateType.OFF);
+                    tNewState = algorithmParam;
                 }
-            } else if (bs.tHysterisis == 0) {
-                bs.state = stateType.TO_OFF;
-                bs.nextState = stateType.OFF;
-                tNewState = bs.tToOff;
-            } else if (bs.tToOff == 0) {
-                bs.state = stateType.HISTERISIS;
-                bs.nextState = stateType.OFF;
-                tNewState = bs.tHysterisis;
+            } else if (this.bs.gettHysteresis() == 0) {
+                this.bs.setState(StateType.TO_OFF);
+                this.bs.setNextState(StateType.OFF);
+                tNewState = this.bs.gettToOff();
+            } else if (this.bs.gettToOff() == 0) {
+                this.bs.setState(StateType.HYSTERESIS);
+                this.bs.setNextState(StateType.OFF);
+                tNewState = this.bs.gettHysteresis();
             } else {
-                bs.state = stateType.HISTERISIS;
-                bs.nextState = stateType.TO_OFF;
-                tNewState = bs.tHysterisis;
+                this.bs.setState(StateType.HYSTERESIS);
+                this.bs.setNextState(StateType.HYSTERESIS);
+                tNewState = this.bs.gettHysteresis();
             }
         }
 
         return tNewState;
     }
 
-    public static double activationAlgorithm(BaseStation bs, boolean newState) {
-        return switch (bs.algorithm) {
-            case NO_COALESCING -> activationNoCoalescing(bs);
-            case SIZE_BASED_COALESCING -> activationSizeBasedCoalescing(bs);
-            case TIME_BASED_COALESCING -> activationTimeBasedCoalescing(bs);
-            case FIXED_COALESCING -> activationFixedCoalescing(bs, newState);
+    public double activationAlgorithm(boolean newState) {
+        return switch (this.mode) {
+            case NO_COALESCING -> activationNoCoalescing();
+            case SIZE_BASED_COALESCING -> activationSizeBasedCoalescing();
+            case TIME_BASED_COALESCING -> activationTimeBasedCoalescing();
+            case FIXED_COALESCING -> activationFixedCoalescing(newState);
             case UNADMITTED -> 0;
         };
     }
 
-    private static double activationNoCoalescing(BaseStation bs) {
+    private double activationNoCoalescing() {
         double tNewState = 0;
 
-        if (!bs.listaTasksPendientes.isEmpty()) {
-            if (bs.state == stateType.ON && bs.tToOn != 0) {
-                bs.state = stateType.TO_ON;
-                bs.nextState = stateType.ON;
-                tNewState = bs.tToOn;
-            } else if (bs.state == stateType.HISTERISIS) {
-                bs.state = stateType.ON;
+        if (!bs.getTasksPending().isEmpty()) {
+            if (bs.getStateX() == StateType.ON && bs.gettToOn() != 0) {
+                bs.setState(StateType.TO_ON);
+                bs.setNextState(StateType.ON);
+                tNewState = bs.gettToOn();
+            } else if (bs.getStateX() == StateType.HYSTERESIS) {
+                bs.setState(StateType.ON);
             }
         }
 
         return tNewState;
     }
 
-    private static double activationSizeBasedCoalescing(BaseStation bs) {
+    private double activationSizeBasedCoalescing() {
         double tNewState = 0;
         double q = 0;
 
-        for (Map.Entry<Long, Task> entry : bs.listaTasksPendientes.entrySet()) {
+        for (Map.Entry<Long, Task> entry : bs.getTasksPending().entrySet()) {
             final Task currentTask = entry.getValue();
             q += currentTask.getSize();
         }
 
-        if (bs.state == stateType.OFF && q > bs.algorithmParam) {
-            if (bs.tToOn == 0) {
-                bs.state = stateType.ON;
+        if (bs.getStateX() == StateType.OFF && q > algorithmParam) {
+            if (bs.gettToOn() == 0) {
+                bs.setState(StateType.ON);
             } else {
-                bs.state = stateType.TO_ON;
-                bs.nextState = stateType.ON;
-                tNewState = bs.tToOn;
+                bs.setState(StateType.TO_ON);
+                bs.setNextState(StateType.ON);
+                tNewState = bs.gettToOn();
             }
 
-        } else if (bs.state == stateType.HISTERISIS && !bs.listaTasksPendientes.isEmpty()) {
-            bs.state = stateType.ON;
+        } else if (bs.getStateX() == StateType.HYSTERESIS && !bs.getTasksPending().isEmpty()) {
+            bs.setState(StateType.ON);
         }
 
         return tNewState;
     }
 
-    private static double activationTimeBasedCoalescing(BaseStation bs) {
+    private double activationTimeBasedCoalescing() {
         double tNewState = 0;
 
-        if (!bs.listaTasksPendientes.isEmpty()) {
-            if (bs.state == stateType.OFF) {
-                if (bs.tToOn == 0 && bs.algorithmParam == 0)
-                    bs.state = stateType.ON;
-                else if (bs.tToOn != 0 && bs.algorithmParam == 0) {
-                    bs.state = stateType.TO_ON;
-                    bs.nextState = stateType.ON;
-                    tNewState = bs.tToOn;
-                } else if (bs.tToOn == 0) {
-                    bs.state = stateType.WAITING_TO_ON;
-                    bs.nextState = stateType.ON;
-                    tNewState = bs.algorithmParam;
+        if (!bs.getTasksPending().isEmpty()) {
+            if (bs.getStateX() == StateType.OFF) {
+                if (bs.gettToOn() == 0 && algorithmParam == 0)
+                    bs.setState(StateType.ON);
+                else if (bs.gettToOn() != 0 && algorithmParam == 0) {
+                    bs.setState(StateType.TO_ON);
+                    bs.setNextState(StateType.ON);
+                    tNewState = bs.gettToOn();
+                } else if (bs.gettToOn() == 0) {
+                    bs.setState(StateType.WAITING_TO_ON);
+                    bs.setNextState(StateType.ON);
+                    tNewState = algorithmParam;
                 } else {
-                    bs.state = stateType.WAITING_TO_ON;
-                    bs.nextState = stateType.TO_ON;
-                    tNewState = bs.algorithmParam;
+                    bs.setState(StateType.WAITING_TO_ON);
+                    bs.setNextState(StateType.TO_ON);
+                    tNewState = algorithmParam;
                 }
-            } else if (bs.state == stateType.HISTERISIS) {
-                bs.state = stateType.ON;
+            } else if (bs.getStateX() == StateType.HYSTERESIS) {
+                bs.setState(StateType.ON);
             }
         }
 
         return tNewState;
     }
 
-    private static double activationFixedCoalescing(BaseStation bs, boolean newState) {
+    private double activationFixedCoalescing(boolean newState) {
         double tNewState = 0;
 
-        if (bs.state == stateType.OFF) {
-            if (!bs.listaTasksPendientes.isEmpty() && newState) {
-                if (bs.tToOn == 0)
-                    bs.state = stateType.ON;
+        if (bs.getStateX() == StateType.OFF) {
+            if (!bs.getTasksPending().isEmpty() && newState) {
+                if (bs.gettToOn() == 0)
+                    bs.setState(StateType.ON);
                 else {
-                    bs.state = stateType.TO_ON;
-                    bs.nextState = stateType.ON;
-                    tNewState = bs.tToOn;
+                    bs.setState(StateType.TO_ON);
+                    bs.setNextState(StateType.ON);
+                    tNewState = bs.gettToOn();
                 }
             } else if (newState) {
-                bs.nextState = stateType.OFF;
-                tNewState = bs.algorithmParam;
+                bs.setNextState(StateType.OFF);
+                tNewState = algorithmParam;
             }
 
-        } else if (bs.state == stateType.HISTERISIS && !bs.listaTasksPendientes.isEmpty()) {
-            bs.state = stateType.ON;
+        } else if (bs.getStateX() == StateType.HYSTERESIS && !bs.getTasksPending().isEmpty()) {
+            bs.setState(StateType.ON);
         }
 
         return tNewState;
+    }
+
+    @Override
+    public String toString() {
+        return "mode=" + mode + ", algorithmParam=" + algorithmParam;
     }
 }

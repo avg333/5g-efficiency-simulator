@@ -1,3 +1,5 @@
+package loggers;
+
 import entities.Bs;
 import entities.Ue;
 
@@ -113,7 +115,7 @@ public class Depuracion {
 		}
 	}
 
-	public static void printGrid(Ue ue, Bs bs, int filas, int columnas) {
+	public static void printGrid(Ue ue, Bs bs, int filas, int columnas, Map<Integer, Bs> listaBS, Map<Integer, Ue> listaUE) {
 
 		char[][] mapa = new char[filas][columnas * 2];
 
@@ -126,13 +128,13 @@ public class Depuracion {
 			}
 		}
 
-		for (Map.Entry<Integer, Bs> entry : Broker.listaBS.entrySet()) {
+		for (Map.Entry<Integer, Bs> entry : listaBS.entrySet()) {
 			int x = (int) entry.getValue().getX();
 			int y = (int) entry.getValue().getY();
 			mapa[x][y * 2] = 'B';
 		}
 
-		for (Map.Entry<Integer, Ue> entry : Broker.listaUE.entrySet()) {
+		for (Map.Entry<Integer, Ue> entry : listaUE.entrySet()) {
 			int x = (int) entry.getValue().getX();
 			int y = (int) entry.getValue().getY();
 			mapa[x][y * 2] = 'U';
@@ -149,38 +151,6 @@ public class Depuracion {
 			writer.close();
 		} catch (IOException e1) {
 			e1.printStackTrace();
-		}
-	}
-
-	public static void printBSrouteList(Ue ue, Bs bs, long idTarea) {
-
-		ArrayList<String> lista = new ArrayList<>();
-		double distancia;
-		boolean escogida = false;
-
-		lista.add("idTarea" + SEPARADOR + "UE" + SEPARADOR + "UE_X" + SEPARADOR + "UE_Y" + SEPARADOR + "BS" + SEPARADOR
-				+ "BS_X" + SEPARADOR + "BS_Y" + SEPARADOR + "Distancia" + SEPARADOR + "Escogida");
-
-		for (Map.Entry<Integer, Bs> entry : Broker.listaBS.entrySet()) {
-			Bs bsAux = entry.getValue();
-			distancia = Broker.vectorDeDistancias(ue.getX(), ue.getY(), bsAux.getX(), bsAux.getY());
-			if (bsAux.getId() == bs.getId())
-				escogida = true;
-			lista.add(idTarea + SEPARADOR + ue.getId() + SEPARADOR + DF_CSV.format(ue.getX()) + SEPARADOR
-					+ DF_CSV.format(ue.getY()) + SEPARADOR + bsAux.getId() + SEPARADOR + DF_CSV.format(bsAux.getX())
-					+ SEPARADOR + DF_CSV.format(bsAux.getY()) + SEPARADOR + DF_CSV.format(distancia) + SEPARADOR
-					+ escogida);
-			escogida = false;
-		}
-
-		try {
-			BufferedWriter writer = new BufferedWriter(new FileWriter("TRAFFIC_ROUTE_" + idTarea + ".csv"));
-			for (int i = 0; i < lista.size(); i++)
-				writer.write(lista.get(i) + "\n");
-			writer.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 	}
 }

@@ -3,10 +3,9 @@ package entities;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
-import types.actionType;
+import types.Communicator;
+import types.EventType;
 
-import java.io.IOException;
-import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.logging.Level;
@@ -18,24 +17,23 @@ public class Entity {
 
     private static final int RESPONSE_MSG_LEN = 100;
 
-    private final int id;
+    private final Communicator communicator;
     private double x;
     private double y;
-    private final DatagramSocket sc;
-    private final InetAddress ad;
-    private final int port;
+    private int id;
 
-    public Entity(int id, double x, double y, DatagramSocket sc, InetAddress ad, int port) {
-        this.id = id;
+    public Entity(double x, double y, DatagramSocket sc, InetAddress ad, int port) {
         this.x = x;
         this.y = y;
-        this.sc = sc;
-        this.ad = ad;
-        this.port = port;
+        this.communicator = new Communicator(sc, ad, port);
     }
 
     public int getId() {
         return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public double getX() {
@@ -54,29 +52,25 @@ public class Entity {
         this.y = y;
     }
 
-    public MessageUnpacker communicate(MessageBufferPacker packer) {
-        MessageUnpacker unpacker = null;
-        try {
-            final byte[] dataRequest = packer.toByteArray();
-            final byte[] dataResponse = new byte[RESPONSE_MSG_LEN];
-            sc.send(new DatagramPacket(dataRequest, dataRequest.length, ad, port));
-            sc.receive(new DatagramPacket(dataResponse, dataResponse.length));
-            unpacker = MessagePack.newDefaultUnpacker(dataResponse);
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error sending / receiving a message. Execution completed", e);
-            this.closeSocket();
+    public void sendRegisterAck(final int id) {
+        try (final MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
+            packer.packInt(id);
+            communicator.sendMessage(packer);
+        } catch (Exception e) {
             System.exit(-1);
         }
+    }
 
-        return unpacker;
+    public MessageUnpacker communicate(final MessageBufferPacker packer) {
+        communicator.sendMessage(packer);
+        return communicator.receiveMessage(RESPONSE_MSG_LEN);
     }
 
     public void closeSocket() {
         try (final MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
-            packer.packInt(actionType.getCodeByActionType(actionType.CLOSE)).close();
-            final byte[] dataRequest = packer.toByteArray();
-            sc.send(new DatagramPacket(dataRequest, dataRequest.length, ad, port));
-        } catch (IOException e) {
+            packer.packInt(EventType.getCodeByActionType(EventType.CLOSE));
+            communicator.sendMessage(packer);
+        } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Failed to close the socket. Execution completed", e);
             System.exit(-1);
         }

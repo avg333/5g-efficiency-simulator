@@ -3,99 +3,91 @@ package types;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Communicator {
-    private static final Logger LOGGER = Logger.getLogger(Communicator.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(Communicator.class);
+    private static final int TIMEOUT = 0;
 
-    private communicatorType type;
     private DatagramSocket sc;
-    private DatagramPacket dp;
+    private final int portBroker;
+    private InetAddress ad;
 
-    public Communicator(final communicatorType type, final String ipBroker, final int portBroker, final int id, final double x, final double y) {
+    public Communicator(final CommunicatorType type, final String ipBroker, final int portBroker, final double x, final double y) {
+        this.portBroker = portBroker;
+
         try (final MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
-            packer.packInt(communicatorType.getCodeByCommunicatorType(type)).packInt(id).packDouble(x).packDouble(y).close();
-            final byte[] message = packer.toByteArray();
-            final InetAddress ad = InetAddress.getByName(ipBroker);
-            dp = new DatagramPacket(message, message.length, ad, portBroker);
-            sc = new DatagramSocket();
-            sc.send(dp);
-        } catch (IOException ex) {
-            final String msg = "Registration failed. Execution completed";
-            LOGGER.log(Level.SEVERE, msg, ex);
+            this.sc = new DatagramSocket();
+            sc.setSoTimeout(TIMEOUT);
+            this.ad = InetAddress.getByName(ipBroker);
+            LOGGER.debug("Trying to register the {} with the host {} in the port {}", type, ad, portBroker);
+            packer.packInt(CommunicatorType.getCodeByCommunicatorType(type));
+            packer.packDouble(x);
+            packer.packDouble(y);
+            this.sendMessage(packer);
+            final MessageUnpacker unpacker = this.receiveMessage(10);
+            final int id = unpacker.unpackInt();
+            unpacker.close();
+            LOGGER.debug("Registered the {} with id {}", type, id);
+        } catch (Exception e) {
+            LOGGER.error("Registration failed. Execution completed", e);
             System.exit(-1);
         }
 
+    }
+
+    public Communicator(final DatagramSocket sc, final InetAddress ad, final int portBroker) {
+        this.sc = sc;
+        this.ad = ad;
+        this.portBroker = portBroker;
     }
 
     public void close() {
+        if (sc != null && !sc.isClosed()) {
+            try {
+                sc.close();
+            } catch (Exception e) {
+                LOGGER.error("Error trying to close the socket. Execution completed", e);
+                System.exit(-1);
+            }
+        }
+
+    }
+
+    public MessageUnpacker receiveMessage(final int dataLen) {
         try {
-            sc.close();
+            final byte[] data = new byte[dataLen];
+            sc.receive(new DatagramPacket(data, data.length));
+            return MessagePack.newDefaultUnpacker(data);
         } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public actionType receiveActionType() {
-        try {
-            final byte[] data = new byte[10];
-            sc.receive(new DatagramPacket(data, data.length));
-            MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(data);
-            final int action = unpacker.unpackInt();
-            unpacker.close();
-            return actionType.getActionTypeByCode(action);
-        } catch (IOException ex) {
-            final String msg = "Error trying to receive a message. Execution completed";
-            LOGGER.log(Level.SEVERE, msg);
+            LOGGER.error("Error trying to receive a message. Execution completed", e);
+            this.close();
             System.exit(-1);
         }
 
-        return actionType.UNADMITTED;
-    }
-
-    public void sendTask(Double x, Double y, Double size, Double delay) {
-        try (final MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
-            packer.packDouble(x).packDouble(y).packDouble(size).packDouble(delay).close();
-            final byte[] message = packer.toByteArray();
-            dp.setData(message, 0, message.length);
-            sc.send(dp);
-        } catch (IOException ex) {
-            final String msg = "Error trying to send a message. Execution completed";
-            LOGGER.log(Level.SEVERE, msg);
-            System.exit(-1);
-        }
-    }
-
-    public MessageUnpacker receiveMessage() {
-        MessageUnpacker unpacker = null;
-        try {
-            final byte[] data = new byte[50];
-            sc.receive(new DatagramPacket(data, data.length));
-            unpacker = MessagePack.newDefaultUnpacker(data);
-        } catch (IOException ex) {
-            final String msg = "Error trying to receive a message. Execution completed";
-            LOGGER.log(Level.SEVERE, msg);
-            System.exit(-1);
-        }
-
-        return unpacker;
+        return null;
     }
 
     public void sendMessage(final MessageBufferPacker packer) {
         try {
+            packer.close();
             final byte[] message = packer.toByteArray();
-            dp.setData(message, 0, message.length);
+            final DatagramPacket dp = new DatagramPacket(message, message.length, ad, portBroker);
             sc.send(dp);
-        } catch (IOException ex) {
-            final String msg = "Error trying to receive a message. Execution completed";
-            LOGGER.log(Level.SEVERE, msg);
+        } catch (Exception e) {
+            LOGGER.error("Error trying to send a message. Execution completed", e);
+            this.close();
             System.exit(-1);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "ad=" + ad + ", portBroker=" + portBroker;
     }
 }
