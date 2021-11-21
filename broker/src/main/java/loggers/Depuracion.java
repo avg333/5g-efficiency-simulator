@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class Depuracion {
@@ -18,63 +19,45 @@ public class Depuracion {
 	private static final double AVANCE = 0.1;
 	private static double aux = AVANCE;
 
-	public static ArrayList<MyVector> lista = new ArrayList<>();
+	protected static final List<MyVector> lista = new ArrayList<>();
+	protected static final List<String> progresUE = new ArrayList<>();
+	protected static final List<String> progresBS = new ArrayList<>();
 
-	public static ArrayList<String> progresUE = new ArrayList<>();
-	public static ArrayList<String> progresBS = new ArrayList<>();
+	private Depuracion() {
+
+	}
 
 	public static void imprimirLista() {
-		try {
-			BufferedWriter writer = new BufferedWriter(new FileWriter("log_TIME" + ".csv"));
+		try (final BufferedWriter writer = new BufferedWriter(new FileWriter("log_TIME" + ".csv"))) {
 			writer.write("X" + SEPARADOR + "Y\n");
-			for (int i = 0; i < lista.size(); i++)
-				writer.write(lista.get(i).getT() + SEPARADOR + lista.get(i).getTime() + "\n");
-			writer.close();
+			for (MyVector myVector : lista) writer.write(myVector.getT() + SEPARADOR + myVector.getTime() + "\n");
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
 	}
 
 	public static void addVector(long t, long time) {
-		if (t / 1000 >= aux) {
+		if (t / 1000.0 >= aux) {
 			MyVector vector = new MyVector(t, time);
 			lista.add(vector);
 			aux += AVANCE;
 		}
 	}
 
-	static class MyVector {
-		long t;
-		long time;
-
-		public MyVector(long t, long time) {
-			this.t = t;
-			this.time = time;
-		}
-
-		public long getT() {
-			return t;
-		}
-
-		public long getTime() {
-			return time;
-		}
-	}
-
 	public static void addProgressUE(long t, double total, Ue ue) {
-		if (!(t / total * 100 > aux)) {
+		if (t / total * 100 <= aux) {
 			return;
 		}
 		aux += AVANCE;
 		String entrada = DF_CSV.format(t) + SEPARADOR + DF_CSV.format(ue.geteL()) + SEPARADOR
 				+ DF_CSV.format(ue.geteA()) + ";1;1,25" + SEPARADOR
-				+ DF_CSV.format(Math.abs((ue.geteL() - 1) / 1.0 * 100)) + SEPARADOR
+				+ DF_CSV.format(Math.abs((ue.geteL() - 1) * 100)) + SEPARADOR
 				+ DF_CSV.format(Math.abs((ue.geteA() - 1.25) / 1.25 * 100));
 		progresUE.add(entrada);
 	}
 
 	public static void addProgressBS(long t, double total, Bs bs) {
-		if (!(t / total * 100 > aux)) {
+		if (t / total * 100 <= aux) {
 			return;
 		}
 		aux += AVANCE;
@@ -87,30 +70,20 @@ public class Depuracion {
 
 	public static void imprimirProgresionUE() {
 		String columnas = "T;E[L];E[A];E[L] Te�rico;E[A] Te�rico;Error E[L];Error E[A]";
-		BufferedWriter writer;
-		try {
-			writer = new BufferedWriter(new FileWriter("PROGRESSUE.csv"));
+		try (final BufferedWriter writer = new BufferedWriter(new FileWriter("PROGRESSUE.csv"))) {
 			writer.write(columnas + "\n");
-			for (int i = 0; i < progresUE.size(); i++)
-				writer.write(progresUE.get(i) + "\n");
-			writer.close();
+			for (String s : progresUE) writer.write(s + "\n");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
 	public static void imprimirProgresionBS() {
 		String columnas = "T;E[Q];E[W];E[Q] Te�rico;E[W] Te�rico;Error E[Q];Error E[W]";
-		BufferedWriter writer;
-		try {
-			writer = new BufferedWriter(new FileWriter("PROGRESSBS.csv"));
+		try (final BufferedWriter writer = new BufferedWriter(new FileWriter("PROGRESSBS.csv"))) {
 			writer.write(columnas + "\n");
-			for (int i = 0; i < progresBS.size(); i++)
-				writer.write(progresBS.get(i) + "\n");
-			writer.close();
+			for (String progresB : progresBS) writer.write(progresB + "\n");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -143,14 +116,23 @@ public class Depuracion {
 		mapa[(int) ue.getX()][(int) ue.getY() * 2] = Character.forDigit(ue.getId(), 10);
 		mapa[(int) bs.getX()][(int) bs.getY() * 2] = Character.forDigit(bs.getId(), 10);
 
-		try {
-			BufferedWriter writer = new BufferedWriter(new FileWriter("ROUTE_GRID.csv"));
-			for (int i = 0; i < mapa.length; i++) {
-				writer.write(new String(mapa[i]) + "\n");
+		try (final BufferedWriter writer = new BufferedWriter(new FileWriter("ROUTE_GRID.csv"))) {
+			for (char[] chars : mapa) {
+				writer.write(new String(chars) + "\n");
 			}
-			writer.close();
 		} catch (IOException e1) {
 			e1.printStackTrace();
+		}
+	}
+
+	record MyVector(long t, long time) {
+
+		public long getT() {
+			return t;
+		}
+
+		public long getTime() {
+			return time;
 		}
 	}
 }

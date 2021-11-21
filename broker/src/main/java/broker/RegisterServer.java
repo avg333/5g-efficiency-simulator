@@ -5,6 +5,8 @@ import entities.Ue;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import types.CommunicatorType;
 import types.EventType;
 
@@ -15,12 +17,13 @@ import java.net.InetAddress;
 import java.util.Map;
 
 public class RegisterServer extends Thread {
+	private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServer.class);
 
 	private final int port;
 	private final Map<Integer, Bs> listaBS;
 	private final Map<Integer, Ue> listaUE;
 	private final Map<Long, Event> events;
-	private final double T;
+	private final double t;
 	private DatagramSocket sc;
 
 	public RegisterServer(double t, int port, Map<Integer, Bs> listaBS, Map<Integer, Ue> listaUE, Map<Long, Event> events) {
@@ -28,7 +31,7 @@ public class RegisterServer extends Thread {
 		this.listaBS = listaBS;
 		this.listaUE = listaUE;
 		this.events = events;
-		this.T = t;
+		this.t = t;
 	}
 
 	@Override
@@ -56,23 +59,23 @@ public class RegisterServer extends Thread {
 
 				if (type == CommunicatorType.USER_EQUIPMENT) {
 					final Ue ue = new Ue(x, y, sc, ad, portEntity);
+					final Event trafficIngress = new Event(EventType.TRAFFIC_INGRESS, t, ue);
 					listaUE.put(ue.getId(), ue);
-					Event trafficIngress = new Event(EventType.TRAFFIC_INGRESS, T, ue);
 					events.put(trafficIngress.getId(), trafficIngress);
 					ue.sendRegisterAck(ue.getId());
 					System.out.print(" UE_" + ue.getId());
 				} else if (type == CommunicatorType.BASE_STATION) {
-					Bs bs = new Bs(x, y, sc, ad, portEntity);
+					final Bs bs = new Bs(x, y, sc, ad, portEntity);
+					final Event newState = new Event(EventType.NEW_STATE, t, bs);
 					listaBS.put(bs.getId(), bs);
-					Event newState = new Event(EventType.NEW_STATE, T, bs);
 					events.put(newState.getId(), newState);
 					bs.sendRegisterAck(bs.getId());
 					System.out.print(" BS_" + bs.getId());
 				}
 
 			}
-		} catch (IOException ex) {
-			System.out.println("Error en el servidor de registro. Ejecuci�n finalizada");
+		} catch (Exception e) {
+			LOGGER.error("Log server error.. Execution completed", e);
 			System.exit(-1);
 		}
 	}
@@ -87,7 +90,7 @@ public class RegisterServer extends Thread {
 			scAux.send(dp);
 			scAux.close();
 		} catch (IOException e) {
-			System.out.println("Error al cerrar el servidor de registro. Ejecuci�n finalizada");
+			LOGGER.error("Failed to shut down the log server. Execution completed", e);
 			System.exit(-1);
 		}
 	}
@@ -102,7 +105,7 @@ public class RegisterServer extends Thread {
 
 			sc.close();
 		} catch (Exception e) {
-			System.out.println("Error al cerrar los sockets. Ejecuci�n finalizada");
+			LOGGER.error("Failed to close the sockets. Execution completed", e);
 			System.exit(-1);
 		}
 	}
