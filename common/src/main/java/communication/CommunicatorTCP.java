@@ -1,0 +1,94 @@
+package communication;
+
+import org.msgpack.core.MessageBufferPacker;
+import org.msgpack.core.MessagePack;
+import org.msgpack.core.MessageUnpacker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import types.CommunicatorType;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+
+public class CommunicatorTCP implements Communicator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommunicatorTCP.class);
+
+    private Socket clientSocket;
+    private DataOutputStream out;
+    private DataInputStream in;
+
+    public CommunicatorTCP(Socket clientSocket) throws IOException {
+        this.clientSocket = clientSocket;
+        out = new DataOutputStream(clientSocket.getOutputStream());
+        in = new DataInputStream(clientSocket.getInputStream());
+    }
+
+    public CommunicatorTCP(final CommunicatorType type, String ip, int port, final double x, final double y) {
+        try (final MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
+            clientSocket = new Socket(ip, port);
+            out = new DataOutputStream(clientSocket.getOutputStream());
+            in = new DataInputStream(clientSocket.getInputStream());
+            LOGGER.debug("Trying to register the {} with the host {} in the port {}", type, clientSocket.getInetAddress(), clientSocket.getPort());
+            packer.packInt(CommunicatorType.getCodeByCommunicatorType(type));
+            packer.packDouble(x);
+            packer.packDouble(y);
+            this.sendMessage(packer);
+            final MessageUnpacker unpacker = this.receiveMessage(10);
+            final int id = unpacker.unpackInt();
+            unpacker.close();
+            LOGGER.debug("Registered the {} with id {}", type, id);
+        } catch (Exception e) {
+            LOGGER.error("Registration failed. Execution completed", e);
+            System.exit(-1);
+        }
+    }
+
+    @Override
+    public MessageUnpacker receiveMessage(final int dataLen) {
+        try {
+            final int length = in.readInt();
+            byte[] data = new byte[length];
+            in.readFully(data, 0, data.length);
+            return MessagePack.newDefaultUnpacker(data);
+        } catch (Exception e) {
+            LOGGER.error("Error trying to receive a message. Execution completed", e);
+            this.close();
+            System.exit(-1);
+        }
+
+        return null;
+    }
+
+    @Override
+    public void sendMessage(final MessageBufferPacker packer) {
+        try {
+            packer.close();
+            final byte[] message = packer.toByteArray();
+            out.writeInt(message.length);
+            out.write(message);
+        } catch (Exception e) {
+            LOGGER.error("Error trying to send a message. Execution completed", e);
+            this.close();
+            System.exit(-1);
+        }
+    }
+
+    @Override
+    public void close() {
+        try {
+            if (in != null) in.close();
+            out.close();
+            clientSocket.close();
+        } catch (Exception e) {
+            LOGGER.error("Error trying to close the socket. Execution completed", e);
+            System.exit(-1);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "ad=" + clientSocket.getInetAddress().getHostAddress() + ", portBroker=" + clientSocket.getPort();
+    }
+}

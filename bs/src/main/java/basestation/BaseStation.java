@@ -1,5 +1,10 @@
 package basestation;
 
+import algorithm.Algorithm;
+import algorithm.AlgorithmMode;
+import communication.CommunicatorBs;
+import communication.CommunicatorTCP;
+import communication.CommunicatorUDP;
 import org.msgpack.core.MessageUnpacker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +14,6 @@ import types.StateType;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.MessageFormat;
 import java.util.Properties;
 import java.util.TreeMap;
 
@@ -48,6 +52,7 @@ public class BaseStation extends Thread {
 
         final String ipBroker = prop.getProperty("ipBroker");
         final int portBroker = Integer.parseInt(prop.getProperty("portBroker"));
+        final boolean communicatorModeTCP = Boolean.parseBoolean(prop.getProperty("tcp"));
         final double x = Double.parseDouble(prop.getProperty("x"));
         final double y = Double.parseDouble(prop.getProperty("y"));
         c = Double.parseDouble(prop.getProperty("c"));
@@ -56,18 +61,15 @@ public class BaseStation extends Thread {
         tHysteresis = Double.parseDouble(prop.getProperty("tHysteresis"));
         algorithm = new Algorithm(this, mode, algorithmParam);
 
-        communicator = new CommunicatorBs(CommunicatorType.BASE_STATION, ipBroker, portBroker, x, y);
+        communicator = (communicatorModeTCP) ?
+                new CommunicatorBs(new CommunicatorTCP(CommunicatorType.BASE_STATION, ipBroker, portBroker, x, y)) :
+                new CommunicatorBs(new CommunicatorUDP(CommunicatorType.BASE_STATION, ipBroker, portBroker, x, y));
 
-        final String msg = MessageFormat.format("""
-                        {0} started with parameters:
-                        \tcommunications: {1}
-                        \tposition: x={2} y={3}
-                        \tsettings: c={4} tToOff={5} tToOn={6} tHysteresis={7}
-                        \talgorithm: {8}""",
-                CommunicatorType.BASE_STATION, communicator.toString(), x, y,
-                c, tToOff, tToOn, tHysteresis, algorithm.toString());
-
-        LOGGER.info(msg);
+        LOGGER.info("Started");
+        LOGGER.info("communicator: {}", communicator);
+        LOGGER.info("position: x={} y={}", x, y);
+        LOGGER.info("algorithm: {}", algorithm);
+        LOGGER.info("settings: c={} tToOff={} tToOn={} tHysteresis={}", c, tToOff, tToOn, tHysteresis);
     }
 
     public static void main(String[] args) {

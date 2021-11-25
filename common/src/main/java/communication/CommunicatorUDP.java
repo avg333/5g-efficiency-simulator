@@ -1,24 +1,24 @@
-package types;
+package communication;
 
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import types.CommunicatorType;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
-public class Communicator {
-    private static final Logger LOGGER = LoggerFactory.getLogger(Communicator.class);
+public class CommunicatorUDP implements Communicator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommunicatorUDP.class);
     private static final int TIMEOUT = 0;
-
-    private DatagramSocket sc;
     private final int portBroker;
+    private DatagramSocket sc;
     private InetAddress ad;
 
-    public Communicator(final CommunicatorType type, final String ipBroker, final int portBroker, final double x, final double y) {
+    public CommunicatorUDP(final CommunicatorType type, final String ipBroker, final int portBroker, final double x, final double y) {
         this.portBroker = portBroker;
 
         try (final MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
@@ -41,24 +41,13 @@ public class Communicator {
 
     }
 
-    public Communicator(final DatagramSocket sc, final InetAddress ad, final int portBroker) {
+    public CommunicatorUDP(final DatagramSocket sc, final InetAddress ad, final int portBroker) {
         this.sc = sc;
         this.ad = ad;
         this.portBroker = portBroker;
     }
 
-    public void close() {
-        if (sc != null && !sc.isClosed()) {
-            try {
-                sc.close();
-            } catch (Exception e) {
-                LOGGER.error("Error trying to close the socket. Execution completed", e);
-                System.exit(-1);
-            }
-        }
-
-    }
-
+    @Override
     public MessageUnpacker receiveMessage(final int dataLen) {
         try {
             final byte[] data = new byte[dataLen];
@@ -73,6 +62,7 @@ public class Communicator {
         return null;
     }
 
+    @Override
     public void sendMessage(final MessageBufferPacker packer) {
         try {
             packer.close();
@@ -84,6 +74,19 @@ public class Communicator {
             this.close();
             System.exit(-1);
         }
+    }
+
+    @Override
+    public void close() {
+        if (sc != null && !sc.isClosed()) {
+            try {
+                sc.close();
+            } catch (Exception e) {
+                LOGGER.error("Error trying to close the socket. Execution completed", e);
+                System.exit(-1);
+            }
+        }
+
     }
 
     @Override

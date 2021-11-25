@@ -1,5 +1,7 @@
-package basestation;
+package algorithm;
 
+import basestation.BaseStation;
+import basestation.Task;
 import types.StateType;
 
 import java.util.Map;

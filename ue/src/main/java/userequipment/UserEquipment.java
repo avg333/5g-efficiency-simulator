@@ -1,12 +1,16 @@
 package userequipment;
 
+import communication.CommunicatorTCP;
+import communication.CommunicatorUDP;
+import communication.CommunicatorUE;
+import distribution.Distribution;
+import distribution.DistributionMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import types.CommunicatorType;
 import types.EventType;
 
 import java.io.InputStream;
-import java.text.MessageFormat;
 import java.util.Properties;
 
 public class UserEquipment extends Thread {
@@ -48,6 +52,7 @@ public class UserEquipment extends Thread {
 
         final String ipBroker = prop.getProperty("ipBroker");
         final int portBroker = Integer.parseInt(prop.getProperty("portBroker"));
+        final boolean communicatorModeTCP = Boolean.parseBoolean(prop.getProperty("tcp"));
         x = Double.parseDouble(prop.getProperty("x"));
         y = Double.parseDouble(prop.getProperty("y"));
         mobilityDist = new Distribution(mobilityDistributionMode, mobilityDistributionParam1, mobilityDistributionParam2);
@@ -59,20 +64,17 @@ public class UserEquipment extends Thread {
             sizeDist.setSeed(seed);
             delayDist.setSeed(seed);
         }
+        communicator = (communicatorModeTCP) ?
+                new CommunicatorUE(new CommunicatorTCP(CommunicatorType.USER_EQUIPMENT, ipBroker, portBroker, x, y)) :
+                new CommunicatorUE(new CommunicatorUDP(CommunicatorType.USER_EQUIPMENT, ipBroker, portBroker, x, y));
 
-        communicator = new CommunicatorUE(CommunicatorType.USER_EQUIPMENT, ipBroker, portBroker, this.x, this.y);
-
-        final String msg = MessageFormat.format("""
-                        {0} started with parameters:
-                        \tcommunications: {1}
-                        \tposition: x={2} y={3}
-                        \tmobility: {4}
-                        \tsize: {5}
-                        \tdelay: {6}
-                        \tseed={7}""",
-                CommunicatorType.USER_EQUIPMENT, communicator.toString(), x, y,
-                mobilityDist.toString(), sizeDist.toString(), delayDist.toString(), seed);
-        LOGGER.info(msg);
+        LOGGER.info("Started");
+        LOGGER.info("communicator: {}", communicator);
+        LOGGER.info("position: x={} y={}", x, y);
+        LOGGER.info("mobility: {}", mobilityDist);
+        LOGGER.info("size: {}", sizeDist);
+        LOGGER.info("delay: {}", delayDist);
+        LOGGER.info("seed: {}", seed);
     }
 
     public static void main(String[] args) {
@@ -92,7 +94,7 @@ public class UserEquipment extends Thread {
                 case TRAFFIC_INGRESS -> processTrafficIngress();
                 case CLOSE -> {
                     communicator.close();
-                    LOGGER.error("Execution completed");
+                    LOGGER.info("Execution completed");
                     return;
                 }
                 default -> {

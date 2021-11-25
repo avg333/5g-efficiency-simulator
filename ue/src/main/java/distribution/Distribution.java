@@ -1,4 +1,4 @@
-package userequipment;
+package distribution;
 
 import java.util.Random;
 

@@ -1,21 +1,16 @@
-package basestation;
+package communication;
 
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
+import org.msgpack.core.MessageUnpacker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import types.Communicator;
-import types.CommunicatorType;
 import types.StateType;
 
-public class CommunicatorBs extends Communicator {
+public record CommunicatorBs(Communicator communicator) implements Communicator {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommunicatorBs.class);
 
     private static final String ERROR_PACKING = "Error packing the message. Execution completed";
-
-    public CommunicatorBs(CommunicatorType type, String ipBroker, int portBroker, double x, double y) {
-        super(type, ipBroker, portBroker, x, y);
-    }
 
     public void sendTrafficArrival(double q, StateType state, double tTrafficEgress, double tNewState, StateType nextState, double a) {
         try (MessageBufferPacker response = MessagePack.newDefaultBufferPacker()) {
@@ -25,10 +20,10 @@ public class CommunicatorBs extends Communicator {
             response.packDouble(tNewState);
             response.packInt(StateType.getCodeByStateType(nextState));
             response.packDouble(a);
-            this.sendMessage(response);
+            communicator.sendMessage(response);
         } catch (Exception e) {
             LOGGER.error(ERROR_PACKING, e);
-            this.close();
+            communicator.close();
             System.exit(-1);
         }
     }
@@ -44,10 +39,10 @@ public class CommunicatorBs extends Communicator {
             response.packDouble(w);
             response.packLong(id);
             response.packDouble(size);
-            this.sendMessage(response);
+            communicator.sendMessage(response);
         } catch (Exception e) {
             LOGGER.error(ERROR_PACKING, e);
-            this.close();
+            communicator.close();
             System.exit(-1);
         }
     }
@@ -59,11 +54,26 @@ public class CommunicatorBs extends Communicator {
             response.packDouble(tTrafficEgress);
             response.packDouble(tNewState);
             response.packInt(StateType.getCodeByStateType(nextState));
-            this.sendMessage(response);
+            communicator.sendMessage(response);
         } catch (Exception e) {
             LOGGER.error(ERROR_PACKING, e);
-            this.close();
+            communicator.close();
             System.exit(-1);
         }
+    }
+
+    @Override
+    public MessageUnpacker receiveMessage(int dataLen) {
+        return communicator.receiveMessage(dataLen);
+    }
+
+    @Override
+    public void sendMessage(MessageBufferPacker packer) {
+        communicator.sendMessage(packer);
+    }
+
+    @Override
+    public void close() {
+        communicator.close();
     }
 }

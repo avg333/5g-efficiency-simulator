@@ -1,6 +1,6 @@
-package basestation;
+package algorithm;
 
-enum AlgorithmMode {
+public enum AlgorithmMode {
     NO_COALESCING('N'), SIZE_BASED_COALESCING('S'), TIME_BASED_COALESCING('T'), FIXED_COALESCING('F'), UNADMITTED('U');
 
     private final char value;

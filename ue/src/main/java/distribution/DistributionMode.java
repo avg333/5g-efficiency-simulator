@@ -1,6 +1,6 @@
-package userequipment;
+package distribution;
 
-enum DistributionMode {
+public enum DistributionMode {
     DETERMINISTIC('d'), UNIFORM('u'), EXPONENTIAL('e'), UNADMITTED('x');
 
     private final char value;

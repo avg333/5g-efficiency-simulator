@@ -3,36 +3,28 @@ package broker;
 import entities.Entity;
 import types.EventType;
 
-public class Event {
+public record Event(EventType type, long id, double t, Entity entity) {
 
-	private static long counter = 0;
+    private static long counter = 0;
 
-	private final long id;
-	private final EventType type;
-	private final double t;
-	private final Entity entity;
+    public static long getNextId() {
+        return counter++;
+    }
 
-	public Event(final EventType type, final double t, final Entity entity) {
-		this.id = counter++;
-		this.type = type;
-		this.t = t;
-		this.entity = entity;
-	}
+    public long getId() {
+        return id;
+    }
 
-	public long getId() {
-		return id;
-	}
+    public EventType getType() {
+        return type;
+    }
 
-	public EventType getType() {
-		return type;
-	}
+    public double getT() {
+        return t;
+    }
 
-	public double getT() {
-		return t;
-	}
-
-	public Entity getEntity() {
-		return entity;
-	}
+    public Entity getEntity() {
+        return entity;
+    }
 
 }

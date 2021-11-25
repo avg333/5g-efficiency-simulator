@@ -1,13 +1,11 @@
 package entities;
 
+import communication.Communicator;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
-import types.Communicator;
 import types.EventType;
 
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,10 +20,10 @@ public class Entity {
     private double y;
     private int id;
 
-    public Entity(double x, double y, DatagramSocket sc, InetAddress ad, int port) {
+    public Entity(double x, double y, Communicator communicator) {
         this.x = x;
         this.y = y;
-        this.communicator = new Communicator(sc, ad, port);
+        this.communicator = communicator;
     }
 
     public int getId() {

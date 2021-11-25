@@ -1,5 +1,8 @@
 package broker;
 
+import communication.RegisterServer;
+import communication.RegisterServerTCP;
+import communication.RegisterServerUDP;
 import entities.Bs;
 import entities.Ue;
 import loggers.LoggerCustom;
@@ -42,13 +45,17 @@ public class Broker extends Thread {
         }
 
         final int port = Integer.parseInt(prop.getProperty("port"));
+        final boolean communicatorModeTCP = Boolean.parseBoolean(prop.getProperty("tcp"));
         final boolean verbosity = Boolean.parseBoolean(prop.getProperty("verbosity"));
         final boolean eventsLog = Boolean.parseBoolean(prop.getProperty("eventsLog"));
         final char routingAlgorithmModeChar = prop.getProperty("routingAlgorithmMode").charAt(0);
         final RoutingAlgorithmMode routingAlgorithmMode = RoutingAlgorithmMode.getRoutingAlgorithmModeTypeByCode(routingAlgorithmModeChar);
         tFinal = Double.parseDouble(prop.getProperty("tFinal"));
         routingAlgorithm = new RoutingAlgorithm(routingAlgorithmMode);
-        servidor = new RegisterServer(t, port, listaBS, listaUE, events);
+
+        servidor = (communicatorModeTCP) ?
+                new RegisterServerTCP(t, port, listaBS, listaUE, events) :
+                new RegisterServerUDP(t, port, listaBS, listaUE, events);
 
         LoggerCustom.setSettings(verbosity, eventsLog);
 
@@ -101,7 +108,8 @@ public class Broker extends Thread {
         double delay = responseTI.unpackDouble();
         responseTI.close();
 
-        Event trafficIngress = new Event(EventType.TRAFFIC_INGRESS, t + delay, ue);
+        final long eventId = Event.getNextId();
+        Event trafficIngress = new Event(EventType.TRAFFIC_INGRESS, eventId, t + delay, ue);
         events.put(trafficIngress.getId(), trafficIngress);
 
         if (size == -1)
@@ -205,14 +213,16 @@ public class Broker extends Thread {
 
     private void createEvents(Bs bs, double tNewState, double tTrafficEgress, StateType nextState) {
         if (tNewState > 0) {
-            final Event newState = new Event(EventType.NEW_STATE, t + tNewState, bs);
+            final long eventId = Event.getNextId();
+            final Event newState = new Event(EventType.NEW_STATE, eventId, t + tNewState, bs);
             events.put(newState.getId(), newState);
             bs.setNextState(nextState);
             bs.setIdEventNextState(newState.getId());
         }
 
         if (tTrafficEgress > -1) {
-            final Event trafficEgress = new Event(EventType.TRAFFIC_EGRESS, t + tTrafficEgress, bs);
+            final long eventId = Event.getNextId();
+            final Event trafficEgress = new Event(EventType.TRAFFIC_EGRESS, eventId, t + tTrafficEgress, bs);
             events.put(trafficEgress.getId(), trafficEgress);
         }
     }

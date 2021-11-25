@@ -1,23 +1,17 @@
-package userequipment;
+package communication;
 
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import types.Communicator;
-import types.CommunicatorType;
 import types.EventType;
 
-public class CommunicatorUE extends Communicator {
+public record CommunicatorUE(Communicator communicator) implements Communicator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CommunicatorUE.class);
 
     private static final int MSG_LEN = 10;
-
-    public CommunicatorUE(CommunicatorType type, String ipBroker, int portBroker, double x, double y) {
-        super(type, ipBroker, portBroker, x, y);
-    }
 
     public EventType receiveActionType() {
         try (final MessageUnpacker unpacker = this.receiveMessage(MSG_LEN)) {
@@ -43,5 +37,20 @@ public class CommunicatorUE extends Communicator {
             this.close();
             System.exit(-1);
         }
+    }
+
+    @Override
+    public MessageUnpacker receiveMessage(int dataLen) {
+        return communicator.receiveMessage(dataLen);
+    }
+
+    @Override
+    public void sendMessage(MessageBufferPacker packer) {
+        communicator.sendMessage(packer);
+    }
+
+    @Override
+    public void close() {
+        communicator.close();
     }
 }
