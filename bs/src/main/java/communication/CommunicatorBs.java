@@ -10,8 +10,6 @@ import types.StateType;
 public record CommunicatorBs(Communicator communicator) implements Communicator {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommunicatorBs.class);
 
-    private static final String ERROR_PACKING = "Error packing the message. Execution completed";
-
     public void sendTrafficArrival(double q, StateType state, double tTrafficEgress, double tNewState, StateType nextState, double a) {
         try (MessageBufferPacker response = MessagePack.newDefaultBufferPacker()) {
             response.packDouble(q);
@@ -22,7 +20,7 @@ public record CommunicatorBs(Communicator communicator) implements Communicator 
             response.packDouble(a);
             communicator.sendMessage(response);
         } catch (Exception e) {
-            LOGGER.error(ERROR_PACKING, e);
+            LOGGER.error("Error packing the message Traffic Arrival. Execution completed", e);
             communicator.close();
             System.exit(-1);
         }
@@ -41,7 +39,7 @@ public record CommunicatorBs(Communicator communicator) implements Communicator 
             response.packDouble(size);
             communicator.sendMessage(response);
         } catch (Exception e) {
-            LOGGER.error(ERROR_PACKING, e);
+            LOGGER.error("Error packing the message Traffic Egress. Execution completed", e);
             communicator.close();
             System.exit(-1);
         }
@@ -56,7 +54,7 @@ public record CommunicatorBs(Communicator communicator) implements Communicator 
             response.packInt(StateType.getCodeByStateType(nextState));
             communicator.sendMessage(response);
         } catch (Exception e) {
-            LOGGER.error(ERROR_PACKING, e);
+            LOGGER.error("Error packing the message New State. Execution completed", e);
             communicator.close();
             System.exit(-1);
         }

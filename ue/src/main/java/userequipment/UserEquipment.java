@@ -109,7 +109,7 @@ public class UserEquipment extends Thread {
 
     private void processTrafficIngress() {
         communicator.sendTask(x, y, size, delay);
-        LOGGER.debug("Send {} with X={} Y={} SIZE={} DELAY={}", EventType.TRAFFIC_INGRESS, x, y, size, delay);
+        LOGGER.debug("Generated task with SIZE={} DELAY={} in position X={} Y={} ", size, delay, x, y);
         x += mobilityDist.getRandom();
         y += mobilityDist.getRandom();
         size = sizeDist.getRandom();

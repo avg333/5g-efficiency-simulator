@@ -1,7 +1,7 @@
 package types;
 
 public enum EventType {
-    TRAFFIC_INGRESS(1), TRAFFIC_ARRIVE(2), TRAFFIC_EGRESS(3), NEW_STATE(4), CLOSE(-1), UNADMITTED(0);
+    TRAFFIC_INGRESS(1), TRAFFIC_ROUTE(2), TRAFFIC_ARRIVE(3), TRAFFIC_EGRESS(4), NEW_STATE(5), CLOSE(-1), UNADMITTED(0);
 
     private final int value;
 

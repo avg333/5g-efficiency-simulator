@@ -23,17 +23,12 @@ public class BaseStation extends Thread {
     private static final String PROP_FILE_NAME = "config.properties";
 
     private final TreeMap<Long, Task> tasksPending = new TreeMap<>();
-    private final double c;
-    private final double tToOff;
-    private final double tToOn;
-    private final double tHysteresis;
     private final Algorithm algorithm;
     private final CommunicatorBs communicator;
 
     private double q = 0;
     private StateType state = StateType.OFF;
     private StateType nextState = StateType.OFF;
-    private boolean processing = false;
     private Task currentTask;
 
     public BaseStation() {
@@ -55,11 +50,11 @@ public class BaseStation extends Thread {
         final boolean communicatorModeTCP = Boolean.parseBoolean(prop.getProperty("tcp"));
         final double x = Double.parseDouble(prop.getProperty("x"));
         final double y = Double.parseDouble(prop.getProperty("y"));
-        c = Double.parseDouble(prop.getProperty("c"));
-        tToOff = Double.parseDouble(prop.getProperty("tToOff"));
-        tToOn = Double.parseDouble(prop.getProperty("tToOn"));
-        tHysteresis = Double.parseDouble(prop.getProperty("tHysteresis"));
-        algorithm = new Algorithm(this, mode, algorithmParam);
+        final double c = Double.parseDouble(prop.getProperty("c"));
+        final double tToOff = Double.parseDouble(prop.getProperty("tToOff"));
+        final double tToOn = Double.parseDouble(prop.getProperty("tToOn"));
+        final double tHysteresis = Double.parseDouble(prop.getProperty("tHysteresis"));
+        algorithm = new Algorithm(this, mode, c, tToOff, tToOn, tHysteresis, algorithmParam);
 
         communicator = (communicatorModeTCP) ?
                 new CommunicatorBs(new CommunicatorTCP(CommunicatorType.BASE_STATION, ipBroker, portBroker, x, y)) :
@@ -69,27 +64,10 @@ public class BaseStation extends Thread {
         LOGGER.info("communicator: {}", communicator);
         LOGGER.info("position: x={} y={}", x, y);
         LOGGER.info("algorithm: {}", algorithm);
-        LOGGER.info("settings: c={} tToOff={} tToOn={} tHysteresis={}", c, tToOff, tToOn, tHysteresis);
     }
 
     public static void main(String[] args) {
         new BaseStation().start();
-    }
-
-    public double getC() {
-        return c;
-    }
-
-    public double gettToOff() {
-        return tToOff;
-    }
-
-    public double gettToOn() {
-        return tToOn;
-    }
-
-    public double gettHysteresis() {
-        return tHysteresis;
     }
 
     public double getQ() {
@@ -110,14 +88,6 @@ public class BaseStation extends Thread {
 
     public void setNextState(StateType nextState) {
         this.nextState = nextState;
-    }
-
-    public boolean isProcessing() {
-        return processing;
-    }
-
-    public void setProcessing(boolean processing) {
-        this.processing = processing;
     }
 
     public Task getCurrentTask() {
@@ -141,6 +111,7 @@ public class BaseStation extends Thread {
             try {
                 final int type = message.unpackInt();
                 final EventType action = EventType.getActionTypeByCode(type);
+                LOGGER.debug("Received request for {}", action);
 
                 switch (action) {
                     case TRAFFIC_ARRIVE -> {
@@ -166,10 +137,11 @@ public class BaseStation extends Thread {
                     }
                     case CLOSE -> {
                         communicator.close();
+                        LOGGER.info("Execution completed");
                         return;
                     }
                     default -> {
-                        LOGGER.error("Received type of message not supported. Execution completed");
+                        LOGGER.error("Type {} not supported. Execution completed", action);
                         communicator.close();
                         System.exit(-1);
                     }
@@ -185,10 +157,30 @@ public class BaseStation extends Thread {
 
     }
 
+    /**
+     * A la BS le llega una tarea de una UE. Esta tarea se almacena en la lista de tareas.
+     * Despues de eso la BS puede:
+     * <ul>
+     * <li>Procesarla -> Se envia el tiempo que tardara en procesarla</li>
+     * <li>Cambiar de estado -> Se envia el tiempo que tardara en cambiar de estado y el siguiente estado</li>
+     * <li>No hacer ninguna -> no se envia ninguno de los dos anteriores</li>
+     * </ul>
+     * Siempre se envian los siguientes datos:
+     * <ul>
+     * <li>q: tamaño de la cola</li>
+     * <li>state: estado actual</li>
+     * <li>a: tiempo desde la ultima llegada hasta esta</li>
+     * </ul>
+     *
+     * @param t    instante en el que llega la tarea
+     * @param id   identificador unico de la tarea en el sistema
+     * @param size tamaño de la tarea
+     */
     public void processTrafficArrival(final double t, final long id, final double size) {
         final Task task = new Task(id, size, t);
         tasksPending.put(id, task);
         q += size;
+        LOGGER.debug("Received task with ID={} SIZE={} at T={}", id, size, t);
 
         final double tNewState = algorithm.activationAlgorithm(false);
         final double tTrafficEgress = algorithm.processingAlgorithm();
@@ -200,9 +192,10 @@ public class BaseStation extends Thread {
     public void processTrafficEgress(final double t) {
         final long id = currentTask.getId();
         final double size = currentTask.getSize();
-        final double w = t - currentTask.getArrive() - currentTask.getSize() / c;
+        final double w = t - currentTask.getArrive() - currentTask.getSize() / algorithm.c();
+        LOGGER.debug("Processed task with ID={} SIZE={} at T={}", id, size, t);
 
-        processing = false;
+        currentTask = null;
 
         final double tNewState = algorithm.suspensionAlgorithm();
         final double tTrafficEgress = algorithm.processingAlgorithm();
@@ -211,18 +204,25 @@ public class BaseStation extends Thread {
     }
 
     public void processNewState(final StateType stateReceived) {
-        double tNewState = 0;
+        LOGGER.debug("Changed to STATE={}", stateReceived);
+        double tNewState = -1;
+
+        state = stateReceived;
 
         switch (stateReceived) {
-            case TO_OFF -> {
-                nextState = StateType.OFF;
-                tNewState = tToOff;
-            }
             case TO_ON -> {
                 nextState = StateType.ON;
-                tNewState = tToOn;
+                tNewState = algorithm.tToOn();
             }
-            case OFF -> tNewState = algorithm.activationAlgorithm(true);
+            case TO_OFF -> {
+                nextState = StateType.OFF;
+                tNewState = algorithm.tToOff();
+            }
+            case HYSTERESIS -> {
+                nextState = StateType.TO_OFF;
+                tNewState = algorithm.tHysteresis();
+            }
+
         }
 
         final double tTrafficEgress = algorithm.processingAlgorithm();

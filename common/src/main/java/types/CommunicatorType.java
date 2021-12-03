@@ -1,7 +1,7 @@
 package types;
 
 public enum CommunicatorType {
-    USER_EQUIPMENT(1), BASE_STATION(2), UNADMITTED(0);
+    USER_EQUIPMENT(1), BASE_STATION(2), BROKER(3), UNADMITTED(0);
 
     private final int value;
 

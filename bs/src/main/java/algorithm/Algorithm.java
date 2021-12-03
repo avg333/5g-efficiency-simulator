@@ -7,60 +7,49 @@ import types.StateType;
 import java.util.Map;
 import java.util.TreeMap;
 
-public record Algorithm(BaseStation bs, AlgorithmMode mode, double algorithmParam) {
+public record Algorithm(BaseStation bs, AlgorithmMode mode, double c, double tToOff, double tToOn, double tHysteresis,
+                        double algorithmParam) {
 
     public double processingAlgorithm() {
         double tProcess = -1;
 
-        final boolean bsProcessing = this.bs.isProcessing();
+        final boolean bsProcessing = this.bs.getCurrentTask() != null;
         final TreeMap<Long, Task> tasksPending = this.bs.getTasksPending();
         final StateType bsState = this.bs.getStateX();
 
         if (!bsProcessing && !tasksPending.isEmpty() && bsState == StateType.ON) {
             final Task task = tasksPending.pollFirstEntry().getValue();
             this.bs.setCurrentTask(task);
-            this.bs.setProcessing(true);
-            tProcess = task.getSize() / this.bs.getC();
+            tProcess = task.getSize() / c;
 
             if (!tasksPending.isEmpty()) {
                 double q = this.bs.getQ();
                 final Task taskCurrent = this.bs.getCurrentTask();
                 q -= taskCurrent.getSize();
                 this.bs.setQ(q);
-            } else
+            } else {
                 this.bs.setQ(0.0);
+            }
         }
 
         return tProcess;
     }
 
     public double suspensionAlgorithm() {
-        double tNewState = 0;
+        double tNewState = -1;
 
-        final boolean bsProcessing = this.bs.isProcessing();
+        final boolean bsProcessing = this.bs.getCurrentTask() != null;
         final TreeMap<Long, Task> tasksPending = this.bs.getTasksPending();
         final StateType bsState = this.bs.getStateX();
 
         if (bsState == StateType.ON && tasksPending.isEmpty() && !bsProcessing) {
-            if (this.bs.gettToOff() == 0 && this.bs.gettHysteresis() == 0) {
-                this.bs.setState(StateType.OFF);
-                if (mode == AlgorithmMode.FIXED_COALESCING) {
-                    this.bs.setNextState(StateType.OFF);
-                    tNewState = algorithmParam;
-                }
-            } else if (this.bs.gettHysteresis() == 0) {
-                this.bs.setState(StateType.TO_OFF);
-                this.bs.setNextState(StateType.OFF);
-                tNewState = this.bs.gettToOff();
-            } else if (this.bs.gettToOff() == 0) {
-                this.bs.setState(StateType.HYSTERESIS);
-                this.bs.setNextState(StateType.OFF);
-                tNewState = this.bs.gettHysteresis();
+            if (tHysteresis == 0) {
+                this.bs.setNextState(StateType.TO_OFF);
             } else {
-                this.bs.setState(StateType.HYSTERESIS);
                 this.bs.setNextState(StateType.HYSTERESIS);
-                tNewState = this.bs.gettHysteresis();
             }
+            tNewState = 0;
+
         }
 
         return tNewState;
@@ -72,26 +61,29 @@ public record Algorithm(BaseStation bs, AlgorithmMode mode, double algorithmPara
             case SIZE_BASED_COALESCING -> activationSizeBasedCoalescing();
             case TIME_BASED_COALESCING -> activationTimeBasedCoalescing();
             case FIXED_COALESCING -> activationFixedCoalescing(newState);
-            case UNADMITTED -> 0;
         };
     }
 
     private double activationNoCoalescing() {
-        double tNewState = 0;
+        double tNewState = -1;
 
-        if (!bs.getTasksPending().isEmpty()) {
-            if (bs.getStateX() == StateType.ON && bs.gettToOn() != 0) {
-                bs.setState(StateType.TO_ON);
-                bs.setNextState(StateType.ON);
-                tNewState = bs.gettToOn();
-            } else if (bs.getStateX() == StateType.HYSTERESIS) {
-                bs.setState(StateType.ON);
-            }
+        if (!bs.getTasksPending().isEmpty() && bs.getStateX() == StateType.OFF) {
+            bs.setNextState(StateType.TO_ON);
+            tNewState = 0;
+        } else if (!bs.getTasksPending().isEmpty() && bs.getStateX() == StateType.HYSTERESIS) {
+            bs.setNextState(StateType.ON);
+            tNewState = 0;
         }
+
 
         return tNewState;
     }
 
+    /**
+     * Transiciona la BS al estado en activación si el tamaño de la cola es superior al marcado
+     *
+     * @return unidades de tiempo hasta la activacion
+     */
     private double activationSizeBasedCoalescing() {
         double tNewState = 0;
         double q = 0;
@@ -102,12 +94,12 @@ public record Algorithm(BaseStation bs, AlgorithmMode mode, double algorithmPara
         }
 
         if (bs.getStateX() == StateType.OFF && q > algorithmParam) {
-            if (bs.gettToOn() == 0) {
+            if (tToOn == 0) {
                 bs.setState(StateType.ON);
             } else {
                 bs.setState(StateType.TO_ON);
                 bs.setNextState(StateType.ON);
-                tNewState = bs.gettToOn();
+                tNewState = tToOn;
             }
 
         } else if (bs.getStateX() == StateType.HYSTERESIS && !bs.getTasksPending().isEmpty()) {
@@ -122,13 +114,13 @@ public record Algorithm(BaseStation bs, AlgorithmMode mode, double algorithmPara
 
         if (!bs.getTasksPending().isEmpty()) {
             if (bs.getStateX() == StateType.OFF) {
-                if (bs.gettToOn() == 0 && algorithmParam == 0)
+                if (tToOn == 0 && algorithmParam == 0)
                     bs.setState(StateType.ON);
-                else if (bs.gettToOn() != 0 && algorithmParam == 0) {
+                else if (tToOn != 0 && algorithmParam == 0) {
                     bs.setState(StateType.TO_ON);
                     bs.setNextState(StateType.ON);
-                    tNewState = bs.gettToOn();
-                } else if (bs.gettToOn() == 0) {
+                    tNewState = tToOn;
+                } else if (tToOn == 0) {
                     bs.setState(StateType.WAITING_TO_ON);
                     bs.setNextState(StateType.ON);
                     tNewState = algorithmParam;
@@ -150,12 +142,12 @@ public record Algorithm(BaseStation bs, AlgorithmMode mode, double algorithmPara
 
         if (bs.getStateX() == StateType.OFF) {
             if (!bs.getTasksPending().isEmpty() && newState) {
-                if (bs.gettToOn() == 0)
+                if (tToOn == 0)
                     bs.setState(StateType.ON);
                 else {
                     bs.setState(StateType.TO_ON);
                     bs.setNextState(StateType.ON);
-                    tNewState = bs.gettToOn();
+                    tNewState = tToOn;
                 }
             } else if (newState) {
                 bs.setNextState(StateType.OFF);
@@ -171,6 +163,7 @@ public record Algorithm(BaseStation bs, AlgorithmMode mode, double algorithmPara
 
     @Override
     public String toString() {
-        return "mode=" + mode + ", algorithmParam=" + algorithmParam;
+        return "mode=" + mode + ", algorithmParam=" + algorithmParam + ", c=" + c + ", tToOff=" + tToOff +
+                ", tToOn=" + tToOn + ", tHysteresis=" + tHysteresis;
     }
 }

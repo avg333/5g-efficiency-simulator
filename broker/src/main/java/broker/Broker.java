@@ -24,13 +24,14 @@ public class Broker extends Thread {
     private static final Logger LOGGER = LoggerFactory.getLogger(Broker.class);
     private static final String PROP_FILE_NAME = "config.properties";
 
-    private final RegisterServer servidor;
+    private final RegisterServer server;
     private final RoutingAlgorithm routingAlgorithm;
     private final double tFinal;
 
     private final Map<Integer, Bs> listaBS = new TreeMap<>();
     private final Map<Integer, Ue> listaUE = new TreeMap<>();
     private final Map<Long, Event> events = new TreeMap<>();
+    private final LoggerCustom loggerCustom;
     private double t = 0;
     private long taskCounter = 0;
 
@@ -46,20 +47,19 @@ public class Broker extends Thread {
 
         final int port = Integer.parseInt(prop.getProperty("port"));
         final boolean communicatorModeTCP = Boolean.parseBoolean(prop.getProperty("tcp"));
-        final boolean verbosity = Boolean.parseBoolean(prop.getProperty("verbosity"));
         final boolean eventsLog = Boolean.parseBoolean(prop.getProperty("eventsLog"));
         final char routingAlgorithmModeChar = prop.getProperty("routingAlgorithmMode").charAt(0);
         final RoutingAlgorithmMode routingAlgorithmMode = RoutingAlgorithmMode.getRoutingAlgorithmModeTypeByCode(routingAlgorithmModeChar);
         tFinal = Double.parseDouble(prop.getProperty("tFinal"));
         routingAlgorithm = new RoutingAlgorithm(routingAlgorithmMode);
 
-        servidor = (communicatorModeTCP) ?
+        server = (communicatorModeTCP) ?
                 new RegisterServerTCP(t, port, listaBS, listaUE, events) :
                 new RegisterServerUDP(t, port, listaBS, listaUE, events);
 
-        LoggerCustom.setSettings(verbosity, eventsLog);
+        loggerCustom = new LoggerCustom(eventsLog);
 
-        LOGGER.info("broker.Broker iniciado con los parametros:\n\tport={} verbosity={} csv={}", port, verbosity, eventsLog);
+        LOGGER.info("broker.Broker iniciado con los parametros:\n\tport={} csv={}", port, eventsLog);
         LOGGER.info("\nPulsa enter para iniciar la simulaci�n. ");
     }
 
@@ -116,10 +116,10 @@ public class Broker extends Thread {
             return;
 
         ue.addTask(xUe, yUe, size, delay);
-        LoggerCustom.logTrafficIngress(t, ue.getId(), xUe, yUe, idTarea, size, delay);
+        loggerCustom.logTrafficIngress(t, ue.getId(), xUe, yUe, idTarea, size, delay);
 
         Bs bs = routingAlgorithm.getBs(ue, listaBS);
-        LoggerCustom.logTrafficRoute(t, ue.getId(), bs.getId(), idTarea, size);
+        loggerCustom.logTrafficRoute(t, ue.getId(), bs.getId(), idTarea, size);
 
         final MessageBufferPacker requestTA = MessagePack.newDefaultBufferPacker();
         eventCode = EventType.getCodeByActionType(EventType.TRAFFIC_ARRIVE);
@@ -135,13 +135,13 @@ public class Broker extends Thread {
         double a = responseTA.unpackDouble();
         responseTA.close();
 
-        LoggerCustom.logTrafficArrival(t, bs.getId(), idTarea, size, q, a);
+        loggerCustom.logTrafficArrival(t, bs.getId(), idTarea, size, q, a);
 
         if (bs.getState() == StateType.HYSTERESIS) {
-            LoggerCustom.logNewState(t, bs.getId(), q, state);
+            loggerCustom.logNewState(t, bs.getId(), q, state);
             events.remove(bs.getIdEventNextState());
         } else if (state != bs.getState())
-            LoggerCustom.logNewState(t, bs.getId(), q, state);
+            loggerCustom.logNewState(t, bs.getId(), q, state);
 
         createEvents(bs, tNewState, tTrafficEgress, StateType.getStateTypeByCode(nextState));
 
@@ -167,10 +167,10 @@ public class Broker extends Thread {
             double size = responseTE.unpackDouble();
             responseTE.close();
 
-            LoggerCustom.logTrafficEgress(t, bs.getId(), id, size, q, w);
+            loggerCustom.logTrafficEgress(t, bs.getId(), id, size, q, w);
 
             if (state != bs.getState())
-                LoggerCustom.logNewState(t, bs.getId(), q, state);
+                loggerCustom.logNewState(t, bs.getId(), q, state);
 
             createEvents(bs, tNewState, tTrafficEgress, StateType.getStateTypeByCode(nextState));
 
@@ -200,7 +200,7 @@ public class Broker extends Thread {
             responseNS.close();
 
             if (state != bs.getState())
-                LoggerCustom.logNewState(t, bs.getId(), q, state);
+                loggerCustom.logNewState(t, bs.getId(), q, state);
 
             createEvents(bs, tNewState, tTrafficEgress, nextState);
 
@@ -212,7 +212,7 @@ public class Broker extends Thread {
     }
 
     private void createEvents(Bs bs, double tNewState, double tTrafficEgress, StateType nextState) {
-        if (tNewState > 0) {
+        if (tNewState >= 0) {
             final long eventId = Event.getNextId();
             final Event newState = new Event(EventType.NEW_STATE, eventId, t + tNewState, bs);
             events.put(newState.getId(), newState);
@@ -229,22 +229,22 @@ public class Broker extends Thread {
 
     @Override
     public void run() {
-        servidor.start();
+        server.start();
         final Scanner in = new Scanner(System.in);
         in.nextLine();
         in.close();
-        servidor.closeRegister();
+        server.closeRegister();
 
         final long start = System.currentTimeMillis();
         while (t <= tFinal) {
             final Event event = getNextEvent();
             processEvent(event);
-            LoggerCustom.printProgress(t, tFinal);
+            loggerCustom.printProgress(t, tFinal);
         }
         final long finish = System.currentTimeMillis();
 
-        servidor.closeSockets();
-        LoggerCustom.imprimirResultados(finish - start, t, listaBS, listaUE);
+        server.closeSockets();
+        loggerCustom.imprimirResultados(finish - start, t, listaBS, listaUE);
     }
 
 }

@@ -2,16 +2,19 @@ package loggers;
 
 import entities.Bs;
 import entities.Ue;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import types.CommunicatorType;
+import types.EventType;
 import types.StateType;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
@@ -20,31 +23,33 @@ public class LoggerCustom {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerCustom.class);
 
+    private static final String DIR = "/logs/events/";
     private static final int AVANCE = 1;
-    private static final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
-    private static final Date date = new Date();
-    private static final DecimalFormat DF_CSV = new DecimalFormat();
-    private static final DecimalFormat DF_LOG = new DecimalFormat("#.###");
-    private static final String SEPARADOR = ";";
-    private static final String COLUMNAS = "T" + SEPARADOR + "ENTIDAD" + SEPARADOR + "ID" + SEPARADOR + "EVENTO"
-            + SEPARADOR + "TAREA" + SEPARADOR + "L" + SEPARADOR + "A" + SEPARADOR + "X" + SEPARADOR + "Y" + SEPARADOR
-            + "FROM-UE" + SEPARADOR + "TO-BS" + SEPARADOR + "Q" + SEPARADOR + "W" + SEPARADOR + "STATE";
-    private static final ArrayList<String> listaEventos = new ArrayList<>();
-    private static int aux = AVANCE;
-    private static boolean verbosity;
-    private static boolean eventos;
+    private static final String[] COLUMNS = {"T", "ENTIDAD", "ID", "EVENTO", "TAREA", "L", "A", "X", "Y",
+            "FROM-UE", "TO-BS", "Q", "W", "STATE"};
+    private final boolean printCsv;
+    private final SimpleDateFormat formatter;
+    private int aux = AVANCE;
+    private FileWriter out;
+    private CSVPrinter printer;
 
-    private LoggerCustom() {
-
+    public LoggerCustom(boolean printCsv) {
+        formatter = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+        this.printCsv = printCsv;
+        if (printCsv) {
+            try {
+                File theDir = new File(DIR);
+                if (!theDir.exists()) theDir.mkdirs();
+                out = new FileWriter(DIR + "events_" + formatter.format(new Date()) + ".csv");
+                printer = new CSVPrinter(out, CSVFormat.DEFAULT.withHeader(COLUMNS));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
-    public static void setSettings(boolean verbosity, boolean eventos) {
-        LoggerCustom.verbosity = verbosity;
-        LoggerCustom.eventos = eventos;
-    }
-
-    public static void printProgress(double current, double total) {
-        if ((current / total * 100 <= aux) || verbosity) {
+    public void printProgress(double current, double total) {
+        if (current / total * 100 <= aux) {
             return;
         }
 
@@ -63,13 +68,12 @@ public class LoggerCustom {
         System.out.print(string);
     }
 
-    public static void imprimirResultados(long elapsedTime, double t, Map<Integer, Bs> listaBS, Map<Integer, Ue> listaUE) {
+    public void imprimirResultados(long elapsedTime, double t, Map<Integer, Bs> listaBS, Map<Integer, Ue> listaUE) {
         LOGGER.info("Fin de la simulacion. Tiempo de ejecucion: {}s", elapsedTime / 1000);
         imprimirResumen(elapsedTime, t, listaBS, listaUE);
-        imprimirEventos();
     }
 
-    public static void imprimirResumen(long elapsedTime, double t, Map<Integer, Bs> listaBS, Map<Integer, Ue> listaUE) {
+    public void imprimirResumen(long elapsedTime, double t, Map<Integer, Bs> listaBS, Map<Integer, Ue> listaUE) {
         double eQ = 0;
         double eW = 0;
         double eL = 0;
@@ -93,104 +97,88 @@ public class LoggerCustom {
         eL = eL / listaUE.size();
         eA = eA / listaUE.size();
 
-        try (final BufferedWriter writer = new BufferedWriter(new FileWriter("resumen_" + formatter.format(date) + ".txt"))) {
-            writer.write("Resumen simulaci�n " + formatter.format(date) + ":\n");
-            writer.write("Log: " + verbosity + ". Eventos: " + eventos + ". T final: " + DF_LOG.format(t)
-                    + ". Tiempo de simulaci�n: " + DF_LOG.format(elapsedTime / 1000) + "s.\n");
-            writer.write("N: " + listaBS.size() + ". E[Q] Global: " + DF_LOG.format(eQ) + ". E[W] Global: "
-                    + DF_LOG.format(eW) + ".\n");
+        try (final BufferedWriter writer = new BufferedWriter(new FileWriter("resumen_" + formatter.format(new Date()) + ".txt"))) {
+            writer.write("Resumen simulaci�n " + formatter.format(new Date()) + ":\n");
+            writer.write("Eventos: " + printCsv + ". T final: " + (t)
+                    + ". Tiempo de simulaci�n: " + (elapsedTime / 1000) + "s.\n");
+            writer.write("N: " + listaBS.size() + ". E[Q] Global: " + (eQ) + ". E[W] Global: "
+                    + (eW) + ".\n");
             for (Map.Entry<Integer, Bs> entry : listaBS.entrySet())
                 writer.write(
-                        "\tBS ID: " + entry.getValue().getId() + " E[Q]: " + DF_LOG.format(entry.getValue().getEq())
-                                + " E[W]: " + DF_LOG.format(entry.getValue().getEw()) + ".\n");
-            writer.write("m: " + listaUE.size() + ". E[L] Global: " + DF_LOG.format(eL) + ". E[A] Global: "
-                    + DF_LOG.format(eA) + ".\n");
+                        "\tBS ID: " + entry.getValue().getId() + " E[Q]: " + (entry.getValue().getEq())
+                                + " E[W]: " + (entry.getValue().getEw()) + ".\n");
+            writer.write("m: " + listaUE.size() + ". E[L] Global: " + (eL) + ". E[A] Global: "
+                    + (eA) + ".\n");
             for (Map.Entry<Integer, Ue> entry : listaUE.entrySet())
                 writer.write(
-                        "\tUE ID: " + entry.getValue().getId() + " E[L]: " + DF_LOG.format(entry.getValue().geteL())
-                                + " E[A]: " + DF_LOG.format(entry.getValue().geteA()) + ".\n");
+                        "\tUE ID: " + entry.getValue().getId() + " E[L]: " + (entry.getValue().geteL())
+                                + " E[A]: " + (entry.getValue().geteA()) + ".\n");
         } catch (IOException e) {
             LOGGER.error("Error al imprimir el archivo resumen.txt.", e);
         }
     }
 
-    public static void imprimirEventos() {
-        if (listaEventos.isEmpty())
-            return;
-
-        try (final BufferedWriter writer = new BufferedWriter(new FileWriter("eventos_" + formatter.format(date) + ".csv"))) {
-            writer.write(COLUMNAS + "\n");
-            for (String listaEvento : listaEventos) writer.write(listaEvento + "\n");
-        } catch (IOException e) {
-            LOGGER.error("Error al imprimir el archivo eventos.csv.", e);
-        }
-    }
-
-    public static void logTrafficIngress(double t, int idUe, double xUe, double yUe, long idTarea, double size,
-                                         double delay) {
-        if (verbosity) {
-            LOGGER.debug("{} UE {} TRAFFIC_INGRESS id={} size={} next={} x={} y={}", t, idUe, idTarea, size, delay, xUe, yUe);
-        }
-        if (eventos)
-            listaEventos.add(DF_CSV.format(t) + SEPARADOR + "UE" + SEPARADOR + idUe + SEPARADOR + "TRAFFIC_INGRESS"
-                    + SEPARADOR + idTarea + SEPARADOR + DF_CSV.format(size) + SEPARADOR + DF_CSV.format(delay)
-                    + SEPARADOR + DF_CSV.format(xUe) + SEPARADOR + DF_CSV.format(yUe));
-    }
-
-    public static void logTrafficRoute(double t, int idUe, int idBs, long idTarea, double size) {
-        if (verbosity) {
-            LOGGER.debug("{} BK 0 TRAFFIC_ROUTE id={} size={} from-ue={} to-bs={}", t, idTarea, size, idUe, idBs);
-        }
-        if (eventos)
-            listaEventos.add(DF_CSV.format(t) + SEPARADOR + "BK" + SEPARADOR + "0" + SEPARADOR + "TRAFFIC_ROUTE"
-                    + SEPARADOR + idTarea + SEPARADOR + DF_CSV.format(size) + SEPARADOR + SEPARADOR + SEPARADOR
-                    + SEPARADOR + idUe + SEPARADOR + idBs);
-    }
-
-    public static void logTrafficArrival(double t, int idBs, long idDemanda, double cantidad, double cola, double a) {
-        if (verbosity) {
-            LOGGER.debug("{} BS {} TRAFFIC_ARRIVAL id={} size={} a={} q={}", t, idBs, idDemanda, cantidad, a, cola);
-        }
-        if (eventos)
-            listaEventos.add(DF_CSV.format(t) + SEPARADOR + "BS" + SEPARADOR + idBs + SEPARADOR + "TRAFFIC_ARRIVAL"
-                    + SEPARADOR + idDemanda + SEPARADOR + DF_CSV.format(cantidad) + SEPARADOR + DF_CSV.format(a)
-                    + SEPARADOR + SEPARADOR + SEPARADOR + SEPARADOR + SEPARADOR + DF_CSV.format(cola) + SEPARADOR
-                    + SEPARADOR);
-    }
-
-    public static void logTrafficEgress(double t, int idBs, long idDemanda, double cantidad, double cola,
-                                        double wait) {
-        if (verbosity) {
-            LOGGER.debug("{} BS {} TRAFFIC_EGRESS id={} size={} q={} wait={}", t, idBs, idDemanda, cantidad, cola, wait);
-        }
-        if (eventos)
-            listaEventos.add(DF_CSV.format(t) + SEPARADOR + "BS" + SEPARADOR + idBs + SEPARADOR + "TRAFFIC_EGRESS"
-                    + SEPARADOR + idDemanda + SEPARADOR + DF_CSV.format(cantidad) + SEPARADOR + SEPARADOR + SEPARADOR
-                    + SEPARADOR + SEPARADOR + SEPARADOR + DF_CSV.format(cola) + SEPARADOR + DF_CSV.format(wait)
-                    + SEPARADOR);
-    }
-
-    public static void logNewState(double t, int idBs, double q, StateType estadoBs) {
-        String state;
-        switch (estadoBs) {
-            case ON -> state = "on";
-            case OFF -> state = "off";
-            case TO_ON -> state = "to_on";
-            case TO_OFF -> state = "to_off";
-            default -> {
-                return;
+    public void logTrafficIngress(double t, int idUe, double xUe, double yUe, long idTarea, double size,
+                                  double delay) {
+        LOGGER.debug("{} entity={} {} event={} id={} size={} next={} x={} y={}", t, CommunicatorType.USER_EQUIPMENT,
+                idUe, EventType.TRAFFIC_INGRESS, idTarea, size, delay, xUe, yUe);
+        if (printCsv) {
+            try {
+                printer.printRecord(t, CommunicatorType.USER_EQUIPMENT, idUe, EventType.TRAFFIC_INGRESS,
+                        idTarea, size, delay, xUe, yUe, null, null, null, null, null);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+        }
+    }
 
+    public void logTrafficRoute(double t, int idUe, int idBs, long idTask, double size) {
+        LOGGER.debug("{} BK 0 TRAFFIC_ROUTE id={} size={} from-ue={} to-bs={}", t, idTask, size, idUe, idBs);
+        if (printCsv) {
+            try {
+                printer.printRecord(t, CommunicatorType.BROKER, 0, EventType.TRAFFIC_ROUTE, idTask, size,
+                        null, null, null, idUe, idBs, null, null, null);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void logTrafficArrival(double t, int idBs, long idTask, double size, double q, double a) {
+        LOGGER.debug("{} BS {} TRAFFIC_ARRIVAL id={} size={} a={} q={}", t, idBs, idTask, size, a, q);
+        if (printCsv) {
+            try {
+                printer.printRecord(t, CommunicatorType.BASE_STATION, idBs, EventType.TRAFFIC_ARRIVE, idTask,
+                        size, a, null, null, null, null, q, null, null);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void logTrafficEgress(double t, int idBs, long idTask, double size, double q, double wait) {
+        LOGGER.debug("{} BS {} TRAFFIC_EGRESS id={} size={} q={} wait={}", t, idBs, idTask, size, q, wait);
+        if (printCsv) {
+            try {
+                printer.printRecord(t, CommunicatorType.BASE_STATION, idBs, EventType.TRAFFIC_EGRESS, idTask,
+                        size, null, null, null, null, null, q, wait, null);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void logNewState(double t, int idBs, double q, StateType stateBs) {
+        LOGGER.debug("{} BS {} NEW_STATE q={} state={}", t, idBs, q, stateBs);
+        if (printCsv) {
+            try {
+                printer.printRecord(t, CommunicatorType.BASE_STATION, idBs, EventType.NEW_STATE, null, null,
+                        null, null, null, null, null, q, null, stateBs);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
-        if (verbosity) {
-            LOGGER.debug("{} BS {} NEW_STATE q={} state={}", t, idBs, q, state);
-        }
-        if (eventos) {
-            listaEventos.add(DF_CSV.format(t) + SEPARADOR + "BS" + SEPARADOR + idBs + SEPARADOR + "NEW_STATE"
-                    + SEPARADOR + SEPARADOR + SEPARADOR + SEPARADOR + SEPARADOR + SEPARADOR + SEPARADOR + SEPARADOR
-                    + DF_CSV.format(q) + SEPARADOR + SEPARADOR + state);
-        }
     }
 
 }
