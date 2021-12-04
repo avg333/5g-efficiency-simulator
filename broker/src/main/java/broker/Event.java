@@ -11,20 +11,4 @@ public record Event(EventType type, long id, double t, Entity entity) {
         return counter++;
     }
 
-    public long getId() {
-        return id;
-    }
-
-    public EventType getType() {
-        return type;
-    }
-
-    public double getT() {
-        return t;
-    }
-
-    public Entity getEntity() {
-        return entity;
-    }
-
 }

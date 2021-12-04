@@ -31,7 +31,7 @@ public class CommunicatorTCP implements Communicator {
             out = new DataOutputStream(clientSocket.getOutputStream());
             in = new DataInputStream(clientSocket.getInputStream());
             LOGGER.debug("Trying to register the {} with the host {} in the port {}", type, clientSocket.getInetAddress(), clientSocket.getPort());
-            packer.packInt(CommunicatorType.getCodeByCommunicatorType(type));
+            packer.packInt(type.value);
             packer.packDouble(x);
             packer.packDouble(y);
             this.sendMessage(packer);

@@ -13,10 +13,10 @@ public record CommunicatorBs(Communicator communicator) implements Communicator 
     public void sendTrafficArrival(double q, StateType state, double tTrafficEgress, double tNewState, StateType nextState, double a) {
         try (MessageBufferPacker response = MessagePack.newDefaultBufferPacker()) {
             response.packDouble(q);
-            response.packInt(StateType.getCodeByStateType(state));
+            response.packInt(state.value);
             response.packDouble(tTrafficEgress);
             response.packDouble(tNewState);
-            response.packInt(StateType.getCodeByStateType(nextState));
+            response.packInt(nextState.value);
             response.packDouble(a);
             communicator.sendMessage(response);
         } catch (Exception e) {
@@ -30,10 +30,10 @@ public record CommunicatorBs(Communicator communicator) implements Communicator 
                                   long id, double size) {
         try (MessageBufferPacker response = MessagePack.newDefaultBufferPacker()) {
             response.packDouble(q);
-            response.packInt(StateType.getCodeByStateType(state));
+            response.packInt(state.value);
             response.packDouble(tTrafficEgress);
             response.packDouble(tNewState);
-            response.packInt(StateType.getCodeByStateType(nextState));
+            response.packInt(nextState.value);
             response.packDouble(w);
             response.packLong(id);
             response.packDouble(size);
@@ -48,10 +48,10 @@ public record CommunicatorBs(Communicator communicator) implements Communicator 
     public void sendNewState(double q, StateType stateReceived, double tTrafficEgress, double tNewState, StateType nextState) {
         try (MessageBufferPacker response = MessagePack.newDefaultBufferPacker()) {
             response.packDouble(q);
-            response.packInt(StateType.getCodeByStateType(stateReceived));
+            response.packInt(stateReceived.value);
             response.packDouble(tTrafficEgress);
             response.packDouble(tNewState);
-            response.packInt(StateType.getCodeByStateType(nextState));
+            response.packInt(nextState.value);
             communicator.sendMessage(response);
         } catch (Exception e) {
             LOGGER.error("Error packing the message New State. Execution completed", e);

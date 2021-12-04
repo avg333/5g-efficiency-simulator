@@ -1,7 +1,7 @@
 package distribution;
 
 public enum DistributionMode {
-    DETERMINISTIC('d'), UNIFORM('u'), EXPONENTIAL('e'), UNADMITTED('x');
+    DETERMINISTIC('d'), UNIFORM('u'), EXPONENTIAL('e');
 
     private final char value;
 
@@ -13,6 +13,6 @@ public enum DistributionMode {
         for (DistributionMode e : DistributionMode.values()) {
             if (code == e.value) return e;
         }
-        return UNADMITTED;
+        throw new IllegalArgumentException ("Value " + code +" not supported for the distribution type");
     }
 }

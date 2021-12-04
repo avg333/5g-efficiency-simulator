@@ -72,7 +72,7 @@ public class RegisterServerUDP extends Thread implements RegisterServer {
                     final long eventId = Event.getNextId();
                     final Event trafficIngress = new Event(EventType.TRAFFIC_INGRESS, eventId, t, ue);
                     listaUE.put(ue.getId(), ue);
-                    events.put(trafficIngress.getId(), trafficIngress);
+                    events.put(trafficIngress.id(), trafficIngress);
                     ue.sendRegisterAck(ue.getId());
                     System.out.print(" UE_" + ue.getId());
                 } else if (type == CommunicatorType.BASE_STATION) {
@@ -80,7 +80,7 @@ public class RegisterServerUDP extends Thread implements RegisterServer {
                     final long eventId = Event.getNextId();
                     final Event newState = new Event(EventType.NEW_STATE, eventId, t, bs);
                     listaBS.put(bs.getId(), bs);
-                    events.put(newState.getId(), newState);
+                    events.put(newState.id(), newState);
                     bs.sendRegisterAck(bs.getId());
                     System.out.print(" BS_" + bs.getId());
                 }

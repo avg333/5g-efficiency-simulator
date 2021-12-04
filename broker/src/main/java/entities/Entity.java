@@ -66,7 +66,7 @@ public class Entity {
 
     public void closeSocket() {
         try (final MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
-            packer.packInt(EventType.getCodeByActionType(EventType.CLOSE));
+            packer.packInt(EventType.CLOSE.value);
             communicator.sendMessage(packer);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Failed to close the socket. Execution completed", e);

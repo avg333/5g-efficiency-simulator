@@ -26,7 +26,7 @@ public class CommunicatorUDP implements Communicator {
             sc.setSoTimeout(TIMEOUT);
             this.ad = InetAddress.getByName(ipBroker);
             LOGGER.debug("Trying to register the {} with the host {} in the port {}", type, ad, portBroker);
-            packer.packInt(CommunicatorType.getCodeByCommunicatorType(type));
+            packer.packInt(type.value);
             packer.packDouble(x);
             packer.packDouble(y);
             this.sendMessage(packer);

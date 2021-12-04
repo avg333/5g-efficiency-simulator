@@ -5,28 +5,28 @@ import algorithm.AlgorithmMode;
 import communication.CommunicatorBs;
 import communication.CommunicatorTCP;
 import communication.CommunicatorUDP;
-import org.msgpack.core.MessageUnpacker;
+import communication.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import types.CommunicatorType;
 import types.EventType;
 import types.StateType;
 
-import java.io.IOException;
 import java.io.InputStream;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Properties;
-import java.util.TreeMap;
 
 
 public class BaseStation extends Thread {
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseStation.class);
     private static final String PROP_FILE_NAME = "config.properties";
+    private static final int MSG_LEN = 50;
 
-    private final TreeMap<Long, Task> tasksPending = new TreeMap<>();
+    private final List<Task> tasksPending = new LinkedList<>();
     private final Algorithm algorithm;
     private final CommunicatorBs communicator;
 
-    private double q = 0;
     private StateType state = StateType.OFF;
     private StateType nextState = StateType.OFF;
     private Task currentTask;
@@ -70,20 +70,8 @@ public class BaseStation extends Thread {
         new BaseStation().start();
     }
 
-    public double getQ() {
-        return q;
-    }
-
-    public void setQ(double q) {
-        this.q = q;
-    }
-
     public StateType getStateX() {
         return state;
-    }
-
-    public void setState(StateType state) {
-        this.state = state;
     }
 
     public void setNextState(StateType nextState) {
@@ -98,7 +86,7 @@ public class BaseStation extends Thread {
         this.currentTask = currentTask;
     }
 
-    public TreeMap<Long, Task> getTasksPending() {
+    public List<Task> getTasksPending() {
         return tasksPending;
     }
 
@@ -106,52 +94,44 @@ public class BaseStation extends Thread {
     public void run() {
 
         while (true) {
-            final MessageUnpacker message = communicator.receiveMessage(50);
-
-            try {
-                final int type = message.unpackInt();
-                final EventType action = EventType.getActionTypeByCode(type);
-                LOGGER.debug("Received request for {}", action);
-
-                switch (action) {
-                    case TRAFFIC_ARRIVE -> {
-                        final double t = message.unpackDouble();
-                        final long id = message.unpackLong();
-                        final double size = message.unpackDouble();
-                        message.close();
-
-                        processTrafficArrival(t, id, size);
-                    }
-                    case TRAFFIC_EGRESS -> {
-                        final double t = message.unpackDouble();
-                        message.close();
-
-                        processTrafficEgress(t);
-                    }
-                    case NEW_STATE -> {
-                        final int stateReceivedInt = message.unpackInt();
-                        message.close();
-                        final StateType stateReceived = StateType.getStateTypeByCode(stateReceivedInt);
-
-                        processNewState(stateReceived);
-                    }
-                    case CLOSE -> {
-                        communicator.close();
-                        LOGGER.info("Execution completed");
-                        return;
-                    }
-                    default -> {
-                        LOGGER.error("Type {} not supported. Execution completed", action);
-                        communicator.close();
-                        System.exit(-1);
-                    }
-                }
-
-            } catch (IOException e) {
+            Message message = new Message();
+            try{
+                message = new Message(communicator.receiveMessage(MSG_LEN));
+            } catch (Exception e) {
                 LOGGER.error("An attempt to pack / unpack a message failed. Execution completed", e);
                 communicator.close();
                 System.exit(-1);
             }
+
+            final EventType action = message.getAction();
+            LOGGER.debug("Received request for {}", action);
+            switch (action) {
+                case TRAFFIC_ARRIVE -> {
+                    final double t = message.getT();
+                    final long id = message.getId();
+                    final double size = message.getSize();
+                    processTrafficArrival(t, id, size);
+                }
+                case TRAFFIC_EGRESS -> {
+                    final double t = message.getT();
+                    processTrafficEgress(t);
+                }
+                case NEW_STATE -> {
+                    final StateType stateReceived = message.getStateReceived();
+                    processNewState(stateReceived);
+                }
+                case CLOSE -> {
+                    communicator.close();
+                    LOGGER.info("Execution completed");
+                    return;
+                }
+                default -> {
+                    LOGGER.error("Type {} not supported. Execution completed", action);
+                    communicator.close();
+                    System.exit(-1);
+                }
+            }
+
 
         }
 
@@ -178,14 +158,14 @@ public class BaseStation extends Thread {
      */
     public void processTrafficArrival(final double t, final long id, final double size) {
         final Task task = new Task(id, size, t);
-        tasksPending.put(id, task);
-        q += size;
+        tasksPending.add(task);
         LOGGER.debug("Received task with ID={} SIZE={} at T={}", id, size, t);
 
-        final double tNewState = algorithm.activationAlgorithm(false);
+        final double tNewState = algorithm.activationAlgorithm(EventType.TRAFFIC_ARRIVE);
         final double tTrafficEgress = algorithm.processingAlgorithm();
-        final double a = Task.getDelay(t);
 
+        final double q = tasksPending.stream().mapToDouble(Task::getSize).sum();
+        final double a = Task.getDelay(t);
         communicator.sendTrafficArrival(q, state, tTrafficEgress, tNewState, nextState, a);
     }
 
@@ -200,14 +180,15 @@ public class BaseStation extends Thread {
         final double tNewState = algorithm.suspensionAlgorithm();
         final double tTrafficEgress = algorithm.processingAlgorithm();
 
+        final double q = tasksPending.stream().mapToDouble(Task::getSize).sum();
         communicator.sendTrafficEgress(q, state, tTrafficEgress, tNewState, nextState, w, id, size);
     }
 
     public void processNewState(final StateType stateReceived) {
-        LOGGER.debug("Changed to STATE={}", stateReceived);
-        double tNewState = -1;
-
         state = stateReceived;
+        LOGGER.debug("Changed to STATE={}", stateReceived);
+
+        double tNewState;
 
         switch (stateReceived) {
             case TO_ON -> {
@@ -218,15 +199,20 @@ public class BaseStation extends Thread {
                 nextState = StateType.OFF;
                 tNewState = algorithm.tToOff();
             }
+            case WAITING_TO_ON -> {
+                nextState = StateType.TO_ON;
+                tNewState = algorithm.algorithmParam();
+            }
             case HYSTERESIS -> {
                 nextState = StateType.TO_OFF;
                 tNewState = algorithm.tHysteresis();
             }
-
+            default -> tNewState = -1;
         }
 
         final double tTrafficEgress = algorithm.processingAlgorithm();
 
+        final double q = tasksPending.stream().mapToDouble(Task::getSize).sum();
         communicator.sendNewState(q, stateReceived, tTrafficEgress, tNewState, nextState);
     }
 
