@@ -8,7 +8,7 @@ import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import types.CommunicatorType;
+import types.EntityType;
 import types.EventType;
 
 import java.io.IOException;
@@ -37,12 +37,6 @@ public class RegisterServerUDP extends Thread implements RegisterServer {
 
     @Override
     public void run() {
-        registerEntities();
-    }
-
-
-    @Override
-    public void registerEntities() {
         System.out.print("Registradas las entidades:");
         try {
             sc = new DatagramSocket(port);
@@ -52,9 +46,9 @@ public class RegisterServerUDP extends Thread implements RegisterServer {
                 sc.receive(dp);
                 final MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(dp.getData());
                 final int typeInt = unpacker.unpackInt();
-                final CommunicatorType type = CommunicatorType.getCommunicatorTypeTypeByCode(typeInt);
+                final EntityType type = EntityType.getCommunicatorTypeTypeByCode(typeInt);
 
-                if (type == CommunicatorType.UNADMITTED) {
+                if (type == EntityType.UNADMITTED) {
                     unpacker.close();
                     return;
                 }
@@ -67,7 +61,7 @@ public class RegisterServerUDP extends Thread implements RegisterServer {
 
                 final Communicator communicator = new CommunicatorUDP(sc, ad, portEntity);
 
-                if (type == CommunicatorType.USER_EQUIPMENT) {
+                if (type == EntityType.USER_EQUIPMENT) {
                     final Ue ue = new Ue(x, y, communicator);
                     final long eventId = Event.getNextId();
                     final Event trafficIngress = new Event(EventType.TRAFFIC_INGRESS, eventId, t, ue);
@@ -75,7 +69,7 @@ public class RegisterServerUDP extends Thread implements RegisterServer {
                     events.put(trafficIngress.id(), trafficIngress);
                     ue.sendRegisterAck(ue.getId());
                     System.out.print(" UE_" + ue.getId());
-                } else if (type == CommunicatorType.BASE_STATION) {
+                } else if (type == EntityType.BASE_STATION) {
                     final Bs bs = new Bs(x, y, communicator);
                     final long eventId = Event.getNextId();
                     final Event newState = new Event(EventType.NEW_STATE, eventId, t, bs);

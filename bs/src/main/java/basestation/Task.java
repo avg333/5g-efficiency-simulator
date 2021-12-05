@@ -8,16 +8,4 @@ public record Task(long id, double size, double tArrive) {
         tLastArrive = tArrive;
         return delay;
     }
-
-    public long getId() {
-        return id;
-    }
-
-    public double getSize() {
-        return size;
-    }
-
-    public double getArrive() {
-        return tArrive;
-    }
 }

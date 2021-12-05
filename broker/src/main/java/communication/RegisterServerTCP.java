@@ -8,7 +8,7 @@ import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import types.CommunicatorType;
+import types.EntityType;
 import types.EventType;
 
 import java.io.IOException;
@@ -32,22 +32,18 @@ public class RegisterServerTCP extends Thread implements RegisterServer {
         this.t = t;
     }
 
-    @Override
-    public void run() {
-        registerEntities();
-    }
 
     @Override
-    public void registerEntities() {
+    public void run() {
         System.out.print("Registradas las entidades:");
         try (final ServerSocket serverSocket = new ServerSocket(port)) {
             while (true) {
                 final Socket clientSocket = serverSocket.accept();
                 final Communicator communicatorTCP = new CommunicatorTCP(clientSocket);
                 final MessageUnpacker unpacker = communicatorTCP.receiveMessage(0);
-                final CommunicatorType type = CommunicatorType.getCommunicatorTypeTypeByCode(unpacker.unpackInt());
+                final EntityType type = EntityType.getCommunicatorTypeTypeByCode(unpacker.unpackInt());
 
-                if (type == CommunicatorType.UNADMITTED) {
+                if (type == EntityType.UNADMITTED) {
                     unpacker.close();
                     return;
                 }
@@ -56,7 +52,7 @@ public class RegisterServerTCP extends Thread implements RegisterServer {
                 final double y = unpacker.unpackDouble();
                 unpacker.close();
 
-                if (type == CommunicatorType.USER_EQUIPMENT) {
+                if (type == EntityType.USER_EQUIPMENT) {
                     final Ue ue = new Ue(x, y, communicatorTCP);
                     final long eventId = Event.getNextId();
                     final Event trafficIngress = new Event(EventType.TRAFFIC_INGRESS, eventId, t, ue);
@@ -64,7 +60,7 @@ public class RegisterServerTCP extends Thread implements RegisterServer {
                     events.put(trafficIngress.id(), trafficIngress);
                     ue.sendRegisterAck(ue.getId());
                     System.out.print(" UE_" + ue.getId());
-                } else if (type == CommunicatorType.BASE_STATION) {
+                } else if (type == EntityType.BASE_STATION) {
                     final Bs bs = new Bs(x, y, communicatorTCP);
                     final long eventId = Event.getNextId();
                     final Event newState = new Event(EventType.NEW_STATE, eventId, t, bs);

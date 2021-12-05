@@ -8,9 +8,9 @@ import communication.CommunicatorUDP;
 import communication.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import types.CommunicatorType;
+import types.BsStateType;
+import types.EntityType;
 import types.EventType;
-import types.StateType;
 
 import java.io.InputStream;
 import java.util.LinkedList;
@@ -27,8 +27,8 @@ public class BaseStation extends Thread {
     private final Algorithm algorithm;
     private final CommunicatorBs communicator;
 
-    private StateType state = StateType.OFF;
-    private StateType nextState = StateType.OFF;
+    private BsStateType state = BsStateType.OFF;
+    private BsStateType nextState = BsStateType.OFF;
     private Task currentTask;
 
     public BaseStation() {
@@ -57,8 +57,8 @@ public class BaseStation extends Thread {
         algorithm = new Algorithm(this, mode, c, tToOff, tToOn, tHysteresis, algorithmParam);
 
         communicator = (communicatorModeTCP) ?
-                new CommunicatorBs(new CommunicatorTCP(CommunicatorType.BASE_STATION, ipBroker, portBroker, x, y)) :
-                new CommunicatorBs(new CommunicatorUDP(CommunicatorType.BASE_STATION, ipBroker, portBroker, x, y));
+                new CommunicatorBs(new CommunicatorTCP(EntityType.BASE_STATION, ipBroker, portBroker, x, y)) :
+                new CommunicatorBs(new CommunicatorUDP(EntityType.BASE_STATION, ipBroker, portBroker, x, y));
 
         LOGGER.info("Started");
         LOGGER.info("communicator: {}", communicator);
@@ -70,11 +70,11 @@ public class BaseStation extends Thread {
         new BaseStation().start();
     }
 
-    public StateType getStateX() {
+    public BsStateType getStateX() {
         return state;
     }
 
-    public void setNextState(StateType nextState) {
+    public void setNextState(BsStateType nextState) {
         this.nextState = nextState;
     }
 
@@ -94,30 +94,30 @@ public class BaseStation extends Thread {
     public void run() {
 
         while (true) {
-            Message message = new Message();
-            try{
-                message = new Message(communicator.receiveMessage(MSG_LEN));
+            Message request = new Message();
+            try {
+                request = new Message(communicator.receiveMessage(MSG_LEN));
             } catch (Exception e) {
                 LOGGER.error("An attempt to pack / unpack a message failed. Execution completed", e);
                 communicator.close();
                 System.exit(-1);
             }
 
-            final EventType action = message.getAction();
+            final EventType action = request.getAction();
             LOGGER.debug("Received request for {}", action);
             switch (action) {
                 case TRAFFIC_ARRIVE -> {
-                    final double t = message.getT();
-                    final long id = message.getId();
-                    final double size = message.getSize();
+                    final double t = request.getT();
+                    final long id = request.getId();
+                    final double size = request.getSize();
                     processTrafficArrival(t, id, size);
                 }
                 case TRAFFIC_EGRESS -> {
-                    final double t = message.getT();
+                    final double t = request.getT();
                     processTrafficEgress(t);
                 }
                 case NEW_STATE -> {
-                    final StateType stateReceived = message.getStateReceived();
+                    final BsStateType stateReceived = request.getStateReceived();
                     processNewState(stateReceived);
                 }
                 case CLOSE -> {
@@ -137,25 +137,6 @@ public class BaseStation extends Thread {
 
     }
 
-    /**
-     * A la BS le llega una tarea de una UE. Esta tarea se almacena en la lista de tareas.
-     * Despues de eso la BS puede:
-     * <ul>
-     * <li>Procesarla -> Se envia el tiempo que tardara en procesarla</li>
-     * <li>Cambiar de estado -> Se envia el tiempo que tardara en cambiar de estado y el siguiente estado</li>
-     * <li>No hacer ninguna -> no se envia ninguno de los dos anteriores</li>
-     * </ul>
-     * Siempre se envian los siguientes datos:
-     * <ul>
-     * <li>q: tamaño de la cola</li>
-     * <li>state: estado actual</li>
-     * <li>a: tiempo desde la ultima llegada hasta esta</li>
-     * </ul>
-     *
-     * @param t    instante en el que llega la tarea
-     * @param id   identificador unico de la tarea en el sistema
-     * @param size tamaño de la tarea
-     */
     public void processTrafficArrival(final double t, final long id, final double size) {
         final Task task = new Task(id, size, t);
         tasksPending.add(task);
@@ -164,15 +145,15 @@ public class BaseStation extends Thread {
         final double tNewState = algorithm.activationAlgorithm(EventType.TRAFFIC_ARRIVE);
         final double tTrafficEgress = algorithm.processingAlgorithm();
 
-        final double q = tasksPending.stream().mapToDouble(Task::getSize).sum();
+        final double q = tasksPending.stream().mapToDouble(Task::size).sum();
         final double a = Task.getDelay(t);
         communicator.sendTrafficArrival(q, state, tTrafficEgress, tNewState, nextState, a);
     }
 
     public void processTrafficEgress(final double t) {
-        final long id = currentTask.getId();
-        final double size = currentTask.getSize();
-        final double w = t - currentTask.getArrive() - currentTask.getSize() / algorithm.c();
+        final long id = currentTask.id();
+        final double size = currentTask.size();
+        final double w = t - currentTask.tArrive() - currentTask.size() / algorithm.c();
         LOGGER.debug("Processed task with ID={} SIZE={} at T={}", id, size, t);
 
         currentTask = null;
@@ -180,11 +161,11 @@ public class BaseStation extends Thread {
         final double tNewState = algorithm.suspensionAlgorithm();
         final double tTrafficEgress = algorithm.processingAlgorithm();
 
-        final double q = tasksPending.stream().mapToDouble(Task::getSize).sum();
+        final double q = tasksPending.stream().mapToDouble(Task::size).sum();
         communicator.sendTrafficEgress(q, state, tTrafficEgress, tNewState, nextState, w, id, size);
     }
 
-    public void processNewState(final StateType stateReceived) {
+    public void processNewState(final BsStateType stateReceived) {
         state = stateReceived;
         LOGGER.debug("Changed to STATE={}", stateReceived);
 
@@ -192,19 +173,19 @@ public class BaseStation extends Thread {
 
         switch (stateReceived) {
             case TO_ON -> {
-                nextState = StateType.ON;
+                nextState = BsStateType.ON;
                 tNewState = algorithm.tToOn();
             }
             case TO_OFF -> {
-                nextState = StateType.OFF;
+                nextState = BsStateType.OFF;
                 tNewState = algorithm.tToOff();
             }
             case WAITING_TO_ON -> {
-                nextState = StateType.TO_ON;
+                nextState = BsStateType.TO_ON;
                 tNewState = algorithm.algorithmParam();
             }
             case HYSTERESIS -> {
-                nextState = StateType.TO_OFF;
+                nextState = BsStateType.TO_OFF;
                 tNewState = algorithm.tHysteresis();
             }
             default -> tNewState = -1;
@@ -212,7 +193,7 @@ public class BaseStation extends Thread {
 
         final double tTrafficEgress = algorithm.processingAlgorithm();
 
-        final double q = tasksPending.stream().mapToDouble(Task::getSize).sum();
+        final double q = tasksPending.stream().mapToDouble(Task::size).sum();
         communicator.sendNewState(q, stateReceived, tTrafficEgress, tNewState, nextState);
     }
 

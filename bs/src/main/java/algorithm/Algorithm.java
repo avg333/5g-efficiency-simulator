@@ -2,8 +2,8 @@ package algorithm;
 
 import basestation.BaseStation;
 import basestation.Task;
+import types.BsStateType;
 import types.EventType;
-import types.StateType;
 
 import java.util.List;
 
@@ -15,12 +15,12 @@ public record Algorithm(BaseStation bs, AlgorithmMode mode, double c, double tTo
 
         final boolean bsProcessing = this.bs.getCurrentTask() != null;
         final List<Task> tasksPending = this.bs.getTasksPending();
-        final StateType bsState = this.bs.getStateX();
+        final BsStateType bsState = this.bs.getStateX();
 
-        if (!bsProcessing && !tasksPending.isEmpty() && bsState == StateType.ON) {
+        if (!bsProcessing && !tasksPending.isEmpty() && bsState == BsStateType.ON) {
             final Task task = tasksPending.remove(0);
             this.bs.setCurrentTask(task);
-            tProcess = task.getSize() / c;
+            tProcess = task.size() / c;
         }
 
         return tProcess;
@@ -31,13 +31,13 @@ public record Algorithm(BaseStation bs, AlgorithmMode mode, double c, double tTo
 
         final boolean bsProcessing = this.bs.getCurrentTask() != null;
         final List<Task> tasksPending = this.bs.getTasksPending();
-        final StateType bsState = this.bs.getStateX();
+        final BsStateType bsState = this.bs.getStateX();
 
-        if (bsState == StateType.ON && tasksPending.isEmpty() && !bsProcessing) {
+        if (bsState == BsStateType.ON && tasksPending.isEmpty() && !bsProcessing) {
             if (tHysteresis == 0) {
-                this.bs.setNextState(StateType.TO_OFF);
+                this.bs.setNextState(BsStateType.TO_OFF);
             } else {
-                this.bs.setNextState(StateType.HYSTERESIS);
+                this.bs.setNextState(BsStateType.HYSTERESIS);
             }
             tNewState = 0;
 
@@ -48,15 +48,15 @@ public record Algorithm(BaseStation bs, AlgorithmMode mode, double c, double tTo
 
     public double activationAlgorithm(final EventType eventType) {
         final List<Task> tasksPending = this.bs.getTasksPending();
-        final StateType stateBs = bs.getStateX();
+        final BsStateType stateBs = bs.getStateX();
 
 
-        if (!tasksPending.isEmpty() && bs.getStateX() == StateType.HYSTERESIS) {
-            bs.setNextState(StateType.ON);
+        if (!tasksPending.isEmpty() && bs.getStateX() == BsStateType.HYSTERESIS) {
+            bs.setNextState(BsStateType.ON);
             return 0;
         }
 
-        StateType nextState = null;
+        BsStateType nextState = null;
 
         switch (this.mode) {
             case NO_COALESCING -> nextState = activationNoCoalescing(tasksPending, stateBs);
@@ -73,37 +73,37 @@ public record Algorithm(BaseStation bs, AlgorithmMode mode, double c, double tTo
         return -1;
     }
 
-    private StateType activationNoCoalescing(final List<Task> tasksPending, final StateType stateBs) {
-        if (!tasksPending.isEmpty() && stateBs == StateType.OFF) {
-            return StateType.TO_ON;
+    private BsStateType activationNoCoalescing(final List<Task> tasksPending, final BsStateType stateBs) {
+        if (!tasksPending.isEmpty() && stateBs == BsStateType.OFF) {
+            return BsStateType.TO_ON;
         }
 
         return null;
     }
 
-    private StateType activationSizeBasedCoalescing(final List<Task> tasksPending, final StateType stateBs) {
-        final double q = tasksPending.stream().mapToDouble(Task::getSize).sum();
+    private BsStateType activationSizeBasedCoalescing(final List<Task> tasksPending, final BsStateType stateBs) {
+        final double q = tasksPending.stream().mapToDouble(Task::size).sum();
 
-        if (q > algorithmParam && stateBs == StateType.OFF) {
-            return StateType.TO_ON;
+        if (q > algorithmParam && stateBs == BsStateType.OFF) {
+            return BsStateType.TO_ON;
         }
 
         return null;
     }
 
-    private StateType activationTimeBasedCoalescing(final List<Task> tasksPending, final StateType stateBs) {
-        if (!tasksPending.isEmpty() && stateBs == StateType.OFF) {
-            return StateType.WAITING_TO_ON;
+    private BsStateType activationTimeBasedCoalescing(final List<Task> tasksPending, final BsStateType stateBs) {
+        if (!tasksPending.isEmpty() && stateBs == BsStateType.OFF) {
+            return BsStateType.WAITING_TO_ON;
         }
 
         return null;
     }
 
-    private StateType activationFixedCoalescing(final List<Task> tasksPending, final StateType stateBs, final EventType eventType) {
-        if (stateBs == StateType.OFF && !tasksPending.isEmpty() && eventType == EventType.NEW_STATE) {
-            return StateType.TO_ON;
-        } else if (stateBs == StateType.OFF && eventType == EventType.NEW_STATE) {
-            return StateType.OFF;
+    private BsStateType activationFixedCoalescing(final List<Task> tasksPending, final BsStateType stateBs, final EventType eventType) {
+        if (stateBs == BsStateType.OFF && !tasksPending.isEmpty() && eventType == EventType.NEW_STATE) {
+            return BsStateType.TO_ON;
+        } else if (stateBs == BsStateType.OFF && eventType == EventType.NEW_STATE) {
+            return BsStateType.OFF;
         }
 
         return null;

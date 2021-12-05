@@ -1,7 +1,7 @@
 package routing;
 
 public enum RoutingAlgorithmMode {
-    DISTANCE_VECTOR('V'), UNADMITTED('x');
+    DISTANCE_VECTOR('v');
 
     private final char value;
 
@@ -13,6 +13,6 @@ public enum RoutingAlgorithmMode {
         for (RoutingAlgorithmMode e : RoutingAlgorithmMode.values()) {
             if (code == e.value) return e;
         }
-        return UNADMITTED;
+        throw new IllegalArgumentException("Value " + code + " not supported for the routing algorithm");
     }
 }

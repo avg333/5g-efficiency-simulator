@@ -17,25 +17,24 @@ public record RoutingAlgorithm(RoutingAlgorithmMode mode) {
         return Math.sqrt(leg1 * leg1 + leg2 * leg2);
     }
 
-    public Bs getBs(Ue ue, Map<Integer, Bs> listaBS) {
+    public Bs getBs(Ue ue, Map<Integer, Bs> listBs) {
 
-        if (listaBS.isEmpty()) {
-            final String msg = "Error: La lista de BS est� vac�a. Ejecuci�n finalizada";
-            LOGGER.log(Level.SEVERE, msg);
+        if (listBs.isEmpty()) {
+            LOGGER.log(Level.SEVERE, "The BS list is empty. Execution completed");
             System.exit(-1);
         }
 
         Bs bs = null;
-        double distanciaMin = -1;
-        double distancia = 0;
+        double distanceMin = -1;
+        double distance = 0;
 
-        for (var entry : listaBS.entrySet()) {
-            Bs bsAux = entry.getValue();
+        for (var entry : listBs.entrySet()) {
+            final Bs bsAux = entry.getValue();
             switch (mode) {
-                case DISTANCE_VECTOR -> distancia = distanceVector(ue.getX(), ue.getY(), bsAux.getX(), bsAux.getY());
+                case DISTANCE_VECTOR -> distance = distanceVector(ue.getX(), ue.getY(), bsAux.getX(), bsAux.getY());
             }
-            if (distancia < distanciaMin || bs == null) {
-                distanciaMin = distancia;
+            if (distance < distanceMin || bs == null) {
+                distanceMin = distance;
                 bs = bsAux;
             }
         }

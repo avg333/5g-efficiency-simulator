@@ -5,12 +5,12 @@ import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import types.StateType;
+import types.BsStateType;
 
 public record CommunicatorBs(Communicator communicator) implements Communicator {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommunicatorBs.class);
 
-    public void sendTrafficArrival(double q, StateType state, double tTrafficEgress, double tNewState, StateType nextState, double a) {
+    public void sendTrafficArrival(double q, BsStateType state, double tTrafficEgress, double tNewState, BsStateType nextState, double a) {
         try (MessageBufferPacker response = MessagePack.newDefaultBufferPacker()) {
             response.packDouble(q);
             response.packInt(state.value);
@@ -26,7 +26,7 @@ public record CommunicatorBs(Communicator communicator) implements Communicator 
         }
     }
 
-    public void sendTrafficEgress(double q, StateType state, double tTrafficEgress, double tNewState, StateType nextState, double w,
+    public void sendTrafficEgress(double q, BsStateType state, double tTrafficEgress, double tNewState, BsStateType nextState, double w,
                                   long id, double size) {
         try (MessageBufferPacker response = MessagePack.newDefaultBufferPacker()) {
             response.packDouble(q);
@@ -45,7 +45,7 @@ public record CommunicatorBs(Communicator communicator) implements Communicator 
         }
     }
 
-    public void sendNewState(double q, StateType stateReceived, double tTrafficEgress, double tNewState, StateType nextState) {
+    public void sendNewState(double q, BsStateType stateReceived, double tTrafficEgress, double tNewState, BsStateType nextState) {
         try (MessageBufferPacker response = MessagePack.newDefaultBufferPacker()) {
             response.packDouble(q);
             response.packInt(stateReceived.value);

@@ -5,7 +5,7 @@ import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import types.CommunicatorType;
+import types.EntityType;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -14,20 +14,21 @@ import java.net.Socket;
 
 public class CommunicatorTCP implements Communicator {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommunicatorTCP.class);
-
+    private static final int TIMEOUT = 0;
     private Socket clientSocket;
     private DataOutputStream out;
     private DataInputStream in;
 
-    public CommunicatorTCP(Socket clientSocket) throws IOException {
+    public CommunicatorTCP(final Socket clientSocket) throws IOException {
         this.clientSocket = clientSocket;
         out = new DataOutputStream(clientSocket.getOutputStream());
         in = new DataInputStream(clientSocket.getInputStream());
     }
 
-    public CommunicatorTCP(final CommunicatorType type, String ip, int port, final double x, final double y) {
+    public CommunicatorTCP(final EntityType type, final String ip, final int port, final double x, final double y) {
         try (final MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
             clientSocket = new Socket(ip, port);
+            clientSocket.setSoTimeout(TIMEOUT);
             out = new DataOutputStream(clientSocket.getOutputStream());
             in = new DataInputStream(clientSocket.getInputStream());
             LOGGER.debug("Trying to register the {} with the host {} in the port {}", type, clientSocket.getInetAddress(), clientSocket.getPort());

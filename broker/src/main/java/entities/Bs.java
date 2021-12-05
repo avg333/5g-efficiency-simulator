@@ -1,7 +1,7 @@
 package entities;
 
 import communication.Communicator;
-import types.StateType;
+import types.BsStateType;
 
 public class Bs extends Entity {
 
@@ -11,8 +11,8 @@ public class Bs extends Entity {
     private double eW = 0.0;
     private double eQ = 0.0;
 
-    private StateType state = StateType.UNADMITTED;
-    private StateType nextStateBs = StateType.OFF;
+    private BsStateType state = BsStateType.UNADMITTED;
+    private BsStateType nextStateBs = BsStateType.OFF;
     private long idEventNextState;
     private long wCounter = 0;
     private double qAux = 0.0;
@@ -35,19 +35,19 @@ public class Bs extends Entity {
         return tAux != 0 ? (eQ / tAux) : 0;
     }
 
-    public StateType getState() {
+    public BsStateType getState() {
         return state;
     }
 
-    public void setState(StateType state) {
+    public void setState(BsStateType state) {
         this.state = state;
     }
 
-    public StateType getNextStateBs() {
+    public BsStateType getNextStateBs() {
         return nextStateBs;
     }
 
-    public void setNextState(StateType nextStateBs) {
+    public void setNextState(BsStateType nextStateBs) {
         this.nextStateBs = nextStateBs;
     }
 

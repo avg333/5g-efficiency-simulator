@@ -13,6 +13,6 @@ public enum DistributionMode {
         for (DistributionMode e : DistributionMode.values()) {
             if (code == e.value) return e;
         }
-        throw new IllegalArgumentException ("Value " + code +" not supported for the distribution type");
+        throw new IllegalArgumentException("Value " + code + " not supported for the distribution type");
     }
 }

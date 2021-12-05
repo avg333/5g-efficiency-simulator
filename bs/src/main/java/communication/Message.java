@@ -1,8 +1,8 @@
 package communication;
 
 import org.msgpack.core.MessageUnpacker;
+import types.BsStateType;
 import types.EventType;
-import types.StateType;
 
 import java.io.IOException;
 
@@ -15,9 +15,9 @@ public class Message {
     private double tTrafficEgress;
     private double tNewState;
     private double w;
-    private StateType stateReceived;
-    private StateType state;
-    private StateType nextState;
+    private BsStateType stateReceived;
+    private BsStateType state;
+    private BsStateType nextState;
 
     public Message() {
 
@@ -33,11 +33,11 @@ public class Message {
         this.t = t;
     }
 
-    public Message(StateType stateReceived) {
+    public Message(BsStateType stateReceived) {
         this.stateReceived = stateReceived;
     }
 
-    public Message(double tTrafficEgress, double tNewState, types.StateType stateReceived, types.StateType nextState, double q) {
+    public Message(double tTrafficEgress, double tNewState, BsStateType stateReceived, BsStateType nextState, double q) {
         this.tTrafficEgress = tTrafficEgress;
         this.tNewState = tNewState;
         this.stateReceived = stateReceived;
@@ -45,7 +45,7 @@ public class Message {
         this.q = q;
     }
 
-    public Message(double size, double q, double tTrafficEgress, double tNewState, types.StateType state, types.StateType nextState, double w, long id) {
+    public Message(double size, double q, double tTrafficEgress, double tNewState, BsStateType state, BsStateType nextState, double w, long id) {
         this.size = size;
         this.q = q;
         this.tTrafficEgress = tTrafficEgress;
@@ -54,10 +54,6 @@ public class Message {
         this.nextState = nextState;
         this.w = w;
         this.id = id;
-    }
-
-    public EventType getAction() {
-        return action;
     }
 
     public Message(final MessageUnpacker message) throws IOException {
@@ -69,15 +65,17 @@ public class Message {
                 id = message.unpackLong();
                 size = message.unpackDouble();
             }
-            case TRAFFIC_EGRESS -> {
-                t = message.unpackDouble();
-            }
+            case TRAFFIC_EGRESS -> t = message.unpackDouble();
             case NEW_STATE -> {
                 final int stateReceivedInt = message.unpackInt();
-                stateReceived = StateType.getStateTypeByCode(stateReceivedInt);
+                stateReceived = BsStateType.getStateTypeByCode(stateReceivedInt);
             }
         }
         message.close();
+    }
+
+    public EventType getAction() {
+        return action;
     }
 
     public double getT() {
@@ -108,15 +106,15 @@ public class Message {
         return w;
     }
 
-    public StateType getStateReceived() {
+    public BsStateType getStateReceived() {
         return stateReceived;
     }
 
-    public StateType getState() {
+    public BsStateType getState() {
         return state;
     }
 
-    public StateType getNextState() {
+    public BsStateType getNextState() {
         return nextState;
     }
 }

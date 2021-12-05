@@ -5,7 +5,7 @@ import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import types.CommunicatorType;
+import types.EntityType;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -18,7 +18,13 @@ public class CommunicatorUDP implements Communicator {
     private DatagramSocket sc;
     private InetAddress ad;
 
-    public CommunicatorUDP(final CommunicatorType type, final String ipBroker, final int portBroker, final double x, final double y) {
+    public CommunicatorUDP(final DatagramSocket sc, final InetAddress ad, final int portBroker) {
+        this.sc = sc;
+        this.ad = ad;
+        this.portBroker = portBroker;
+    }
+
+    public CommunicatorUDP(final EntityType type, final String ipBroker, final int portBroker, final double x, final double y) {
         this.portBroker = portBroker;
 
         try (final MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
@@ -39,12 +45,6 @@ public class CommunicatorUDP implements Communicator {
             System.exit(-1);
         }
 
-    }
-
-    public CommunicatorUDP(final DatagramSocket sc, final InetAddress ad, final int portBroker) {
-        this.sc = sc;
-        this.ad = ad;
-        this.portBroker = portBroker;
     }
 
     @Override

@@ -13,6 +13,6 @@ public enum AlgorithmMode {
         for (AlgorithmMode e : AlgorithmMode.values()) {
             if (code == e.value) return e;
         }
-        throw new IllegalArgumentException ("Value " + code +" not supported for the algorithm mode");
+        throw new IllegalArgumentException("Value " + code + " not supported for the algorithm mode");
     }
 }

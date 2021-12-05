@@ -7,7 +7,7 @@ import distribution.Distribution;
 import distribution.DistributionMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import types.CommunicatorType;
+import types.EntityType;
 import types.EventType;
 
 import java.io.InputStream;
@@ -65,8 +65,8 @@ public class UserEquipment extends Thread {
             delayDist.setSeed(seed);
         }
         communicator = (communicatorModeTCP) ?
-                new CommunicatorUE(new CommunicatorTCP(CommunicatorType.USER_EQUIPMENT, ipBroker, portBroker, x, y)) :
-                new CommunicatorUE(new CommunicatorUDP(CommunicatorType.USER_EQUIPMENT, ipBroker, portBroker, x, y));
+                new CommunicatorUE(new CommunicatorTCP(EntityType.USER_EQUIPMENT, ipBroker, portBroker, x, y)) :
+                new CommunicatorUE(new CommunicatorUDP(EntityType.USER_EQUIPMENT, ipBroker, portBroker, x, y));
 
         LOGGER.info("Started");
         LOGGER.info("communicator: {}", communicator);

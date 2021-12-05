@@ -6,9 +6,9 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import types.CommunicatorType;
+import types.BsStateType;
+import types.EntityType;
 import types.EventType;
-import types.StateType;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -120,11 +120,11 @@ public class LoggerCustom {
 
     public void logTrafficIngress(double t, int idUe, double xUe, double yUe, long idTarea, double size,
                                   double delay) {
-        LOGGER.debug("{} entity={} {} event={} id={} size={} next={} x={} y={}", t, CommunicatorType.USER_EQUIPMENT,
+        LOGGER.debug("{} entity={} {} event={} id={} size={} next={} x={} y={}", t, EntityType.USER_EQUIPMENT,
                 idUe, EventType.TRAFFIC_INGRESS, idTarea, size, delay, xUe, yUe);
         if (printCsv) {
             try {
-                printer.printRecord(t, CommunicatorType.USER_EQUIPMENT, idUe, EventType.TRAFFIC_INGRESS,
+                printer.printRecord(t, EntityType.USER_EQUIPMENT, idUe, EventType.TRAFFIC_INGRESS,
                         idTarea, size, delay, xUe, yUe, null, null, null, null, null);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -136,7 +136,7 @@ public class LoggerCustom {
         LOGGER.debug("{} BK 0 TRAFFIC_ROUTE id={} size={} from-ue={} to-bs={}", t, idTask, size, idUe, idBs);
         if (printCsv) {
             try {
-                printer.printRecord(t, CommunicatorType.BROKER, 0, EventType.TRAFFIC_ROUTE, idTask, size,
+                printer.printRecord(t, EntityType.BROKER, 0, EventType.TRAFFIC_ROUTE, idTask, size,
                         null, null, null, idUe, idBs, null, null, null);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -148,7 +148,7 @@ public class LoggerCustom {
         LOGGER.debug("{} BS {} TRAFFIC_ARRIVAL id={} size={} a={} q={}", t, idBs, idTask, size, a, q);
         if (printCsv) {
             try {
-                printer.printRecord(t, CommunicatorType.BASE_STATION, idBs, EventType.TRAFFIC_ARRIVE, idTask,
+                printer.printRecord(t, EntityType.BASE_STATION, idBs, EventType.TRAFFIC_ARRIVE, idTask,
                         size, a, null, null, null, null, q, null, null);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -160,7 +160,7 @@ public class LoggerCustom {
         LOGGER.debug("{} BS {} TRAFFIC_EGRESS id={} size={} q={} wait={}", t, idBs, idTask, size, q, wait);
         if (printCsv) {
             try {
-                printer.printRecord(t, CommunicatorType.BASE_STATION, idBs, EventType.TRAFFIC_EGRESS, idTask,
+                printer.printRecord(t, EntityType.BASE_STATION, idBs, EventType.TRAFFIC_EGRESS, idTask,
                         size, null, null, null, null, null, q, wait, null);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -168,11 +168,11 @@ public class LoggerCustom {
         }
     }
 
-    public void logNewState(double t, int idBs, double q, StateType stateBs) {
+    public void logNewState(double t, int idBs, double q, BsStateType stateBs) {
         LOGGER.debug("{} BS {} NEW_STATE q={} state={}", t, idBs, q, stateBs);
         if (printCsv) {
             try {
-                printer.printRecord(t, CommunicatorType.BASE_STATION, idBs, EventType.NEW_STATE, null, null,
+                printer.printRecord(t, EntityType.BASE_STATION, idBs, EventType.NEW_STATE, null, null,
                         null, null, null, null, null, q, null, stateBs);
             } catch (IOException e) {
                 e.printStackTrace();

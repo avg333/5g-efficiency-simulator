@@ -13,8 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import routing.RoutingAlgorithm;
 import routing.RoutingAlgorithmMode;
+import types.BsStateType;
 import types.EventType;
-import types.StateType;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -132,7 +132,7 @@ public class Broker extends Thread {
         final MessageUnpacker responseTA = bs.communicate(requestTA);
 
         final double q = responseTA.unpackDouble();
-        final StateType state = StateType.getStateTypeByCode(responseTA.unpackInt());
+        final BsStateType state = BsStateType.getStateTypeByCode(responseTA.unpackInt());
         final double tTrafficEgress = responseTA.unpackDouble();
         final double tNewState = responseTA.unpackDouble();
         final int nextState = responseTA.unpackInt();
@@ -141,13 +141,13 @@ public class Broker extends Thread {
 
         loggerCustom.logTrafficArrival(t, bs.getId(), taskId, size, q, a);
 
-        if (bs.getState() == StateType.HYSTERESIS) {
+        if (bs.getState() == BsStateType.HYSTERESIS) {
             loggerCustom.logNewState(t, bs.getId(), q, state);
             events.remove(bs.getIdEventNextState());
         } else if (state != bs.getState())
             loggerCustom.logNewState(t, bs.getId(), q, state);
 
-        createEvents(bs, tNewState, tTrafficEgress, StateType.getStateTypeByCode(nextState));
+        createEvents(bs, tNewState, tTrafficEgress, BsStateType.getStateTypeByCode(nextState));
 
         bs.addQ(q, t);
         bs.setState(state);
@@ -162,7 +162,7 @@ public class Broker extends Thread {
             final MessageUnpacker responseTE = bs.communicate(requestTE);
 
             final double q = responseTE.unpackDouble();
-            final StateType state = StateType.getStateTypeByCode(responseTE.unpackInt());
+            final BsStateType state = BsStateType.getStateTypeByCode(responseTE.unpackInt());
             final double tTrafficEgress = responseTE.unpackDouble();
             final double tNewState = responseTE.unpackDouble();
             final int nextState = responseTE.unpackInt();
@@ -176,7 +176,7 @@ public class Broker extends Thread {
             if (state != bs.getState())
                 loggerCustom.logNewState(t, bs.getId(), q, state);
 
-            createEvents(bs, tNewState, tTrafficEgress, StateType.getStateTypeByCode(nextState));
+            createEvents(bs, tNewState, tTrafficEgress, BsStateType.getStateTypeByCode(nextState));
 
             bs.addQ(q, t);
             bs.addW(w);
@@ -188,7 +188,7 @@ public class Broker extends Thread {
 
     private void processNewState(Event event) {
         final Bs bs = (Bs) event.entity();
-        StateType nextState = bs.getNextStateBs();
+        BsStateType nextState = bs.getNextStateBs();
 
         try (final MessageBufferPacker requestNS = MessagePack.newDefaultBufferPacker()) {
             requestNS.packInt(EventType.NEW_STATE.value);
@@ -196,10 +196,10 @@ public class Broker extends Thread {
             final MessageUnpacker responseNS = bs.communicate(requestNS);
 
             final double q = responseNS.unpackDouble();
-            final StateType state = StateType.getStateTypeByCode(responseNS.unpackInt());
+            final BsStateType state = BsStateType.getStateTypeByCode(responseNS.unpackInt());
             final double tTrafficEgress = responseNS.unpackDouble();
             final double tNewState = responseNS.unpackDouble();
-            nextState = StateType.getStateTypeByCode(responseNS.unpackInt());
+            nextState = BsStateType.getStateTypeByCode(responseNS.unpackInt());
             responseNS.close();
 
             if (state != bs.getState())
@@ -214,7 +214,7 @@ public class Broker extends Thread {
 
     }
 
-    private void createEvents(Bs bs, double tNewState, double tTrafficEgress, StateType nextState) {
+    private void createEvents(Bs bs, double tNewState, double tTrafficEgress, BsStateType nextState) {
         if (tNewState >= 0) {
             final long eventId = Event.getNextId();
             final Event newState = new Event(EventType.NEW_STATE, eventId, t + tNewState, bs);

@@ -55,6 +55,7 @@ public class Entity {
             packer.packInt(id);
             communicator.sendMessage(packer);
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Failed to send the register ACK. Execution completed", e);
             System.exit(-1);
         }
     }
