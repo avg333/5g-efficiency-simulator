@@ -37,7 +37,7 @@ public class RegisterServerUDP extends Thread implements RegisterServer {
 
     @Override
     public void run() {
-        System.out.print("Registradas las entidades:");
+        LOGGER.info("Registered entities:");
         try {
             sc = new DatagramSocket(port);
             while (true) {
@@ -64,19 +64,19 @@ public class RegisterServerUDP extends Thread implements RegisterServer {
                 if (type == EntityType.USER_EQUIPMENT) {
                     final Ue ue = new Ue(x, y, communicator);
                     final long eventId = Event.getNextId();
-                    final Event trafficIngress = new Event(EventType.TRAFFIC_INGRESS, eventId, t, ue);
+                    final Event trafficIngress = new Event(eventId, t, EventType.TRAFFIC_INGRESS, ue);
                     listaUE.put(ue.getId(), ue);
                     events.put(trafficIngress.id(), trafficIngress);
                     ue.sendRegisterAck(ue.getId());
-                    System.out.print(" UE_" + ue.getId());
+                    LOGGER.info("UE [id={}] {}", ue.getId(), communicator);
                 } else if (type == EntityType.BASE_STATION) {
                     final Bs bs = new Bs(x, y, communicator);
                     final long eventId = Event.getNextId();
-                    final Event newState = new Event(EventType.NEW_STATE, eventId, t, bs);
+                    final Event newState = new Event(eventId, t, EventType.NEW_STATE, bs);
                     listaBS.put(bs.getId(), bs);
                     events.put(newState.id(), newState);
                     bs.sendRegisterAck(bs.getId());
-                    System.out.print(" BS_" + bs.getId());
+                    LOGGER.info("BS [id={}] {}", bs.getId(), communicator);
                 }
 
             }

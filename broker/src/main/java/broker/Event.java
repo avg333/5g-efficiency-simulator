@@ -3,7 +3,7 @@ package broker;
 import entities.Entity;
 import types.EventType;
 
-public record Event(EventType type, long id, double t, Entity entity) {
+public record Event(long id, double t, EventType type, Entity entity) {
 
     private static long counter = 0;
 

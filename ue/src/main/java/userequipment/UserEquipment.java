@@ -64,17 +64,15 @@ public class UserEquipment extends Thread {
             sizeDist.setSeed(seed);
             delayDist.setSeed(seed);
         }
+
+        LOGGER.info("Started in position [x={} y={}] with distributions ([seed={}]):\n" +
+                "\tsize:[{}], delay:[{}], mobility:[{}]", x, y, seed, sizeDist, delayDist, mobilityDist);
+
         communicator = (communicatorModeTCP) ?
                 new CommunicatorUE(new CommunicatorTCP(EntityType.USER_EQUIPMENT, ipBroker, portBroker, x, y)) :
                 new CommunicatorUE(new CommunicatorUDP(EntityType.USER_EQUIPMENT, ipBroker, portBroker, x, y));
 
-        LOGGER.info("Started");
-        LOGGER.info("communicator: {}", communicator);
-        LOGGER.info("position: x={} y={}", x, y);
-        LOGGER.info("mobility: {}", mobilityDist);
-        LOGGER.info("size: {}", sizeDist);
-        LOGGER.info("delay: {}", delayDist);
-        LOGGER.info("seed: {}", seed);
+        LOGGER.info("Registered with {}", communicator);
     }
 
     public static void main(String[] args) {

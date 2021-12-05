@@ -16,7 +16,6 @@ import routing.RoutingAlgorithmMode;
 import types.BsStateType;
 import types.EventType;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
@@ -28,9 +27,9 @@ public class Broker extends Thread {
     private final RoutingAlgorithm routingAlgorithm;
     private final double tFinal;
 
-    private final Map<Integer, Bs> listaBS = new TreeMap<>();
-    private final Map<Integer, Ue> listaUE = new TreeMap<>();
-    private final Map<Long, Event> events = new TreeMap<>();
+    private final Map<Integer, Bs> mapBs = new HashMap<>();
+    private final Map<Integer, Ue> mapUe = new HashMap<>();
+    private final Map<Long, Event> mapEvents = new HashMap<>();
     private final LoggerCustom loggerCustom;
     private double t = 0;
     private long taskCounter = 0;
@@ -54,13 +53,13 @@ public class Broker extends Thread {
         routingAlgorithm = new RoutingAlgorithm(routingAlgorithmMode);
 
         server = (communicatorModeTCP) ?
-                new RegisterServerTCP(t, port, listaBS, listaUE, events) :
-                new RegisterServerUDP(t, port, listaBS, listaUE, events);
+                new RegisterServerTCP(t, port, mapBs, mapUe, mapEvents) :
+                new RegisterServerUDP(t, port, mapBs, mapUe, mapEvents);
 
         loggerCustom = new LoggerCustom(eventsLog);
 
-        LOGGER.info("broker.Broker iniciado con los parametros:\n\tport={} csv={}", port, eventsLog);
-        LOGGER.info("\nPulsa enter para iniciar la simulaci�n. ");
+        LOGGER.info("Started in [port={}] with {}, simulator time [t={}] and {}", port, routingAlgorithm, tFinal, loggerCustom);
+        LOGGER.info("Press enter to start the simulation");
     }
 
     public static void main(String[] args) {
@@ -68,8 +67,8 @@ public class Broker extends Thread {
     }
 
     private Event getNextEvent() {
-        final Event event = Collections.min(events.values(), Comparator.comparing(Event::t));
-        events.remove(event.id());
+        final Event event = Collections.min(mapEvents.values(), Comparator.comparing(Event::t));
+        mapEvents.remove(event.id());
         return event;
     }
 
@@ -77,80 +76,91 @@ public class Broker extends Thread {
         t = event.t();
         final EventType type = event.type();
 
-        try {
-            switch (type) {
-                case TRAFFIC_INGRESS -> processTrafficIngress(event);
-                case TRAFFIC_EGRESS -> processTrafficEgress(event);
-                case NEW_STATE -> processNewState(event);
-                default -> {
-                    LOGGER.error("Type {} not supported. Execution completed", type);
-                    System.exit(-1);
-                }
+        switch (type) {
+            case TRAFFIC_INGRESS -> processTrafficIngress(event);
+            case TRAFFIC_EGRESS -> processTrafficEgress(event);
+            case NEW_STATE -> processNewState(event);
+            default -> {
+                LOGGER.error("Type {} not supported. Execution completed", type);
+                System.exit(-1);
             }
-        } catch (Exception e) {
-            LOGGER.error("An attempt to pack / unpack a message failed. Execution completed", e);
-            System.exit(-1);
         }
 
     }
 
-    private void processTrafficIngress(Event event) throws IOException {
+    private void processTrafficIngress(Event event) {
         final Ue ue = (Ue) event.entity();
+        try (final MessageBufferPacker requestTI = MessagePack.newDefaultBufferPacker()) {
+            requestTI.packInt(EventType.TRAFFIC_INGRESS.value);
 
-        final MessageBufferPacker requestTI = MessagePack.newDefaultBufferPacker();
-        requestTI.packInt(EventType.TRAFFIC_INGRESS.value);
-        requestTI.close();
+            final MessageUnpacker responseTI = ue.communicate(requestTI);
 
-        final MessageUnpacker responseTI = ue.communicate(requestTI);
+            final long taskId = taskCounter++;
+            final double xUe = responseTI.unpackDouble();
+            final double yUe = responseTI.unpackDouble();
+            final double size = responseTI.unpackDouble();
+            final double delay = responseTI.unpackDouble();
+            responseTI.close();
 
-        final long taskId = taskCounter++;
-        final double xUe = responseTI.unpackDouble();
-        final double yUe = responseTI.unpackDouble();
-        final double size = responseTI.unpackDouble();
-        final double delay = responseTI.unpackDouble();
-        responseTI.close();
+            final long eventId = Event.getNextId();
+            final Event trafficIngress = new Event(eventId, t + delay, EventType.TRAFFIC_INGRESS, ue);
+            mapEvents.put(eventId, trafficIngress);
 
-        final long eventId = Event.getNextId();
-        final Event trafficIngress = new Event(EventType.TRAFFIC_INGRESS, eventId, t + delay, ue);
-        events.put(eventId, trafficIngress);
+            if (size == -1)
+                return;
 
-        if (size == -1)
-            return;
+            ue.addTask(xUe, yUe, size, delay);
+            loggerCustom.logTrafficIngress(t, ue.getId(), xUe, yUe, taskId, size, delay);
 
-        ue.addTask(xUe, yUe, size, delay);
-        loggerCustom.logTrafficIngress(t, ue.getId(), xUe, yUe, taskId, size, delay);
+            final Bs bs = processTrafficRoute(ue, taskId, size);
 
-        final Bs bs = routingAlgorithm.getBs(ue, listaBS);
+            processTrafficArrive(taskId, size, bs);
+        } catch (Exception e) {
+            LOGGER.error("An attempt to pack / unpack a Traffic Ingress message failed. Execution completed", e);
+            System.exit(-1);
+        }
+    }
+
+    private Bs processTrafficRoute(final Ue ue, final long taskId, final double size) {
+        final Bs bs = routingAlgorithm.getBs(ue, mapBs);
         loggerCustom.logTrafficRoute(t, ue.getId(), bs.getId(), taskId, size);
+        return bs;
+    }
 
-        final MessageBufferPacker requestTA = MessagePack.newDefaultBufferPacker();
-        requestTA.packInt(EventType.TRAFFIC_ARRIVE.value);
-        requestTA.packDouble(t);
-        requestTA.packLong(taskId);
-        requestTA.packDouble(size);
-        requestTA.close();
-        final MessageUnpacker responseTA = bs.communicate(requestTA);
+    private void processTrafficArrive(final long taskId, final double size, final Bs bs) {
+        try (final MessageBufferPacker requestTA = MessagePack.newDefaultBufferPacker()) {
 
-        final double q = responseTA.unpackDouble();
-        final BsStateType state = BsStateType.getStateTypeByCode(responseTA.unpackInt());
-        final double tTrafficEgress = responseTA.unpackDouble();
-        final double tNewState = responseTA.unpackDouble();
-        final int nextState = responseTA.unpackInt();
-        final double a = responseTA.unpackDouble();
-        responseTA.close();
+            requestTA.packInt(EventType.TRAFFIC_ARRIVE.value);
+            requestTA.packDouble(t);
+            requestTA.packLong(taskId);
+            requestTA.packDouble(size);
 
-        loggerCustom.logTrafficArrival(t, bs.getId(), taskId, size, q, a);
+            final MessageUnpacker responseTA = bs.communicate(requestTA);
 
-        if (bs.getState() == BsStateType.HYSTERESIS) {
-            loggerCustom.logNewState(t, bs.getId(), q, state);
-            events.remove(bs.getIdEventNextState());
-        } else if (state != bs.getState())
-            loggerCustom.logNewState(t, bs.getId(), q, state);
+            final double q = responseTA.unpackDouble();
+            final BsStateType state = BsStateType.getStateTypeByCode(responseTA.unpackInt());
+            final double tTrafficEgress = responseTA.unpackDouble();
+            final double tNewState = responseTA.unpackDouble();
+            final int nextState = responseTA.unpackInt();
+            final double a = responseTA.unpackDouble();
+            responseTA.close();
 
-        createEvents(bs, tNewState, tTrafficEgress, BsStateType.getStateTypeByCode(nextState));
+            loggerCustom.logTrafficArrival(t, bs.getId(), taskId, size, q, a);
 
-        bs.addQ(q, t);
-        bs.setState(state);
+            if (bs.getState() == BsStateType.HYSTERESIS) {
+                loggerCustom.logNewState(t, bs.getId(), q, state);
+                mapEvents.remove(bs.getIdEventNextState());
+            } else if (state != bs.getState())
+                loggerCustom.logNewState(t, bs.getId(), q, state);
+
+            createEvents(bs, tNewState, tTrafficEgress, BsStateType.getStateTypeByCode(nextState));
+
+            bs.addQ(q, t);
+            bs.setState(state);
+        } catch (Exception e) {
+            LOGGER.error("An attempt to pack / unpack a Traffic Arrive message failed. Execution completed", e);
+            System.exit(-1);
+        }
     }
 
     private void processTrafficEgress(Event event) {
@@ -182,7 +192,8 @@ public class Broker extends Thread {
             bs.addW(w);
             bs.setState(state);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("An attempt to pack / unpack a Traffic Egress message failed. Execution completed", e);
+            System.exit(-1);
         }
     }
 
@@ -209,7 +220,8 @@ public class Broker extends Thread {
 
             bs.setState(state);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("An attempt to pack / unpack a New State message failed. Execution completed", e);
+            System.exit(-1);
         }
 
     }
@@ -217,25 +229,25 @@ public class Broker extends Thread {
     private void createEvents(Bs bs, double tNewState, double tTrafficEgress, BsStateType nextState) {
         if (tNewState >= 0) {
             final long eventId = Event.getNextId();
-            final Event newState = new Event(EventType.NEW_STATE, eventId, t + tNewState, bs);
-            events.put(newState.id(), newState);
+            final Event newState = new Event(eventId, t + tNewState, EventType.NEW_STATE, bs);
+            mapEvents.put(newState.id(), newState);
             bs.setNextState(nextState);
             bs.setIdEventNextState(newState.id());
         }
 
         if (tTrafficEgress > -1) {
             final long eventId = Event.getNextId();
-            final Event trafficEgress = new Event(EventType.TRAFFIC_EGRESS, eventId, t + tTrafficEgress, bs);
-            events.put(trafficEgress.id(), trafficEgress);
+            final Event trafficEgress = new Event(eventId, t + tTrafficEgress, EventType.TRAFFIC_EGRESS, bs);
+            mapEvents.put(trafficEgress.id(), trafficEgress);
         }
     }
 
     @Override
     public void run() {
         server.start();
-        final Scanner in = new Scanner(System.in);
-        in.nextLine();
-        in.close();
+        try (final Scanner in = new Scanner(System.in)) {
+            in.nextLine();
+        }
         server.closeRegister();
 
         final long start = System.currentTimeMillis();
@@ -247,7 +259,8 @@ public class Broker extends Thread {
         final long finish = System.currentTimeMillis();
 
         server.closeSockets();
-        loggerCustom.imprimirResultados(finish - start, t, listaBS, listaUE);
+        loggerCustom.imprimirResultados(finish - start, t, mapBs, mapUe);
+        loggerCustom.close();
     }
 
 }

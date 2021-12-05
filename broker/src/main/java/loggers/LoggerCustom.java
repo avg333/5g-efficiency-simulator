@@ -11,7 +11,6 @@ import types.EntityType;
 import types.EventType;
 
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -23,7 +22,6 @@ public class LoggerCustom {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerCustom.class);
 
-    private static final String DIR = "/logs/events/";
     private static final int AVANCE = 1;
     private static final String[] COLUMNS = {"T", "ENTIDAD", "ID", "EVENTO", "TAREA", "L", "A", "X", "Y",
             "FROM-UE", "TO-BS", "Q", "W", "STATE"};
@@ -38,13 +36,20 @@ public class LoggerCustom {
         this.printCsv = printCsv;
         if (printCsv) {
             try {
-                File theDir = new File(DIR);
-                if (!theDir.exists()) theDir.mkdirs();
-                out = new FileWriter(DIR + "events_" + formatter.format(new Date()) + ".csv");
+                out = new FileWriter("events_" + formatter.format(new Date()) + ".csv");
                 printer = new CSVPrinter(out, CSVFormat.DEFAULT.withHeader(COLUMNS));
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    public void close() {
+        try {
+            out.close();
+            printer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -179,6 +184,11 @@ public class LoggerCustom {
             }
         }
 
+    }
+
+    @Override
+    public String toString() {
+        return printCsv ? "csv printer enabled" : "csv printer disabled";
     }
 
 }

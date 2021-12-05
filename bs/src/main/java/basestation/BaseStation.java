@@ -56,14 +56,13 @@ public class BaseStation extends Thread {
         final double tHysteresis = Double.parseDouble(prop.getProperty("tHysteresis"));
         algorithm = new Algorithm(this, mode, c, tToOff, tToOn, tHysteresis, algorithmParam);
 
+        LOGGER.info("Started in position [x={} y={}] with algorithm [{}]", x, y, algorithm);
+
         communicator = (communicatorModeTCP) ?
                 new CommunicatorBs(new CommunicatorTCP(EntityType.BASE_STATION, ipBroker, portBroker, x, y)) :
                 new CommunicatorBs(new CommunicatorUDP(EntityType.BASE_STATION, ipBroker, portBroker, x, y));
 
-        LOGGER.info("Started");
-        LOGGER.info("communicator: {}", communicator);
-        LOGGER.info("position: x={} y={}", x, y);
-        LOGGER.info("algorithm: {}", algorithm);
+        LOGGER.info("Registered with {}", communicator);
     }
 
     public static void main(String[] args) {
