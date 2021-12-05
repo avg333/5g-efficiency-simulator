@@ -46,8 +46,12 @@ public class LoggerCustom {
 
     public void close() {
         try {
-            out.close();
-            printer.close();
+            if (out != null) {
+                out.close();
+            }
+            if (printer != null) {
+                printer.close();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
