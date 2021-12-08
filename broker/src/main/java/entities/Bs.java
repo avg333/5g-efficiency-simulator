@@ -5,13 +5,11 @@ import types.BsStateType;
 
 public class Bs extends Entity {
 
-    private static int idCounter = 0;
-
     private double q = 0.0;
     private double eW = 0.0;
     private double eQ = 0.0;
 
-    private BsStateType state = BsStateType.UNADMITTED;
+    private BsStateType state = BsStateType.OFF;
     private BsStateType nextStateBs = BsStateType.OFF;
     private long idEventNextState;
     private long wCounter = 0;
@@ -20,7 +18,6 @@ public class Bs extends Entity {
 
     public Bs(double x, double y, Communicator communicator) {
         super(x, y, communicator);
-        this.setId(idCounter++);
     }
 
     public double getQ() {

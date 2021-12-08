@@ -11,9 +11,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
-public class CommunicatorUDP implements Communicator {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CommunicatorUDP.class);
-    private static final int TIMEOUT = 0;
+public class CommunicatorUDP extends Communicator {
+    private final Logger log = LoggerFactory.getLogger(getClass());
     private final int portBroker;
     private DatagramSocket sc;
     private InetAddress ad;
@@ -31,17 +30,9 @@ public class CommunicatorUDP implements Communicator {
             this.sc = new DatagramSocket();
             sc.setSoTimeout(TIMEOUT);
             this.ad = InetAddress.getByName(ipBroker);
-            LOGGER.debug("Trying to register the {} with the host {} in the port {}", type, ad, portBroker);
-            packer.packInt(type.value);
-            packer.packDouble(x);
-            packer.packDouble(y);
-            this.sendMessage(packer);
-            final MessageUnpacker unpacker = this.receiveMessage(10);
-            final int id = unpacker.unpackInt();
-            unpacker.close();
-            LOGGER.debug("Registered the {} with id {}", type, id);
+            register(type, ad, portBroker, x, y, packer);
         } catch (Exception e) {
-            LOGGER.error("Registration failed. Execution completed", e);
+            log.error("Registration failed. Execution completed", e);
             System.exit(-1);
         }
 
@@ -54,7 +45,7 @@ public class CommunicatorUDP implements Communicator {
             sc.receive(new DatagramPacket(data, data.length));
             return MessagePack.newDefaultUnpacker(data);
         } catch (Exception e) {
-            LOGGER.error("Error trying to receive a message. Execution completed", e);
+            log.error("Error trying to receive a message. Execution completed", e);
             this.close();
             System.exit(-1);
         }
@@ -70,7 +61,7 @@ public class CommunicatorUDP implements Communicator {
             final DatagramPacket dp = new DatagramPacket(message, message.length, ad, portBroker);
             sc.send(dp);
         } catch (Exception e) {
-            LOGGER.error("Error trying to send a message. Execution completed", e);
+            log.error("Error trying to send a message. Execution completed", e);
             this.close();
             System.exit(-1);
         }
@@ -82,7 +73,7 @@ public class CommunicatorUDP implements Communicator {
             try {
                 sc.close();
             } catch (Exception e) {
-                LOGGER.error("Error trying to close the socket. Execution completed", e);
+                log.error("Error trying to close the socket. Execution completed", e);
                 System.exit(-1);
             }
         }
@@ -91,6 +82,6 @@ public class CommunicatorUDP implements Communicator {
 
     @Override
     public String toString() {
-        return "ad=" + ad + ", portBroker=" + portBroker;
+        return "ad=" + ad + ", port=" + portBroker;
     }
 }

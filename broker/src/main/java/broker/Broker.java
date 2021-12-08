@@ -259,8 +259,7 @@ public class Broker extends Thread {
         final long finish = System.currentTimeMillis();
 
         server.closeSockets();
-        loggerCustom.imprimirResultados(finish - start, t, mapBs, mapUe);
-        loggerCustom.close();
+        loggerCustom.printResults(finish - start, t, mapBs, mapUe);
     }
 
 }

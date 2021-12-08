@@ -1,7 +1,7 @@
 package types;
 
 public enum BsStateType {
-    ON(1), OFF(2), TO_ON(3), TO_OFF(4), HYSTERESIS(-1), WAITING_TO_ON(-2), UNADMITTED(0);
+    ON(1), OFF(2), TO_ON(3), TO_OFF(4), HYSTERESIS(-1), WAITING_TO_ON(-2);
 
     public final int value;
 
@@ -13,6 +13,6 @@ public enum BsStateType {
         for (BsStateType e : BsStateType.values()) {
             if (code == e.value) return e;
         }
-        return UNADMITTED;
+        throw new IllegalArgumentException("Value " + code + " not supported for the bs state type");
     }
 }

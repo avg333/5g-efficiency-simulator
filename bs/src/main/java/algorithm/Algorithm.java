@@ -33,14 +33,9 @@ public record Algorithm(BaseStation bs, AlgorithmMode mode, double c, double tTo
         final List<Task> tasksPending = this.bs.getTasksPending();
         final BsStateType bsState = this.bs.getStateX();
 
-        if (bsState == BsStateType.ON && tasksPending.isEmpty() && !bsProcessing) {
-            if (tHysteresis == 0) {
-                this.bs.setNextState(BsStateType.TO_OFF);
-            } else {
-                this.bs.setNextState(BsStateType.HYSTERESIS);
-            }
+        if (!bsProcessing && tasksPending.isEmpty() && bsState == BsStateType.ON) {
+            this.bs.setNextState(BsStateType.HYSTERESIS);
             tNewState = 0;
-
         }
 
         return tNewState;
@@ -48,21 +43,22 @@ public record Algorithm(BaseStation bs, AlgorithmMode mode, double c, double tTo
 
     public double activationAlgorithm(final EventType eventType) {
         final List<Task> tasksPending = this.bs.getTasksPending();
-        final BsStateType stateBs = bs.getStateX();
-
+        final BsStateType bsState = bs.getStateX();
 
         if (!tasksPending.isEmpty() && bs.getStateX() == BsStateType.HYSTERESIS) {
             bs.setNextState(BsStateType.ON);
             return 0;
+        } else if (bsState != BsStateType.OFF) {
+            return -1;
         }
 
         BsStateType nextState = null;
 
         switch (this.mode) {
-            case NO_COALESCING -> nextState = activationNoCoalescing(tasksPending, stateBs);
-            case SIZE_BASED_COALESCING -> nextState = activationSizeBasedCoalescing(tasksPending, stateBs);
-            case TIME_BASED_COALESCING -> nextState = activationTimeBasedCoalescing(tasksPending, stateBs);
-            case FIXED_COALESCING -> nextState = activationFixedCoalescing(tasksPending, stateBs, eventType);
+            case NO_COALESCING -> nextState = (!tasksPending.isEmpty()) ? BsStateType.TO_ON : null;
+            case SIZE_BASED_COALESCING -> nextState = activationSizeBasedCoalescing(tasksPending);
+            case TIME_BASED_COALESCING -> nextState = (!tasksPending.isEmpty()) ? BsStateType.WAITING_TO_ON : null;
+            case FIXED_COALESCING -> nextState = activationFixedCoalescing(tasksPending, eventType);
         }
 
         if (nextState != null) {
@@ -73,39 +69,15 @@ public record Algorithm(BaseStation bs, AlgorithmMode mode, double c, double tTo
         return -1;
     }
 
-    private BsStateType activationNoCoalescing(final List<Task> tasksPending, final BsStateType stateBs) {
-        if (!tasksPending.isEmpty() && stateBs == BsStateType.OFF) {
-            return BsStateType.TO_ON;
-        }
-
-        return null;
-    }
-
-    private BsStateType activationSizeBasedCoalescing(final List<Task> tasksPending, final BsStateType stateBs) {
+    private BsStateType activationSizeBasedCoalescing(final List<Task> tasksPending) {
         final double q = tasksPending.stream().mapToDouble(Task::size).sum();
-
-        if (q > algorithmParam && stateBs == BsStateType.OFF) {
-            return BsStateType.TO_ON;
-        }
-
-        return null;
+        return (q > algorithmParam) ? BsStateType.TO_ON : null;
     }
 
-    private BsStateType activationTimeBasedCoalescing(final List<Task> tasksPending, final BsStateType stateBs) {
-        if (!tasksPending.isEmpty() && stateBs == BsStateType.OFF) {
-            return BsStateType.WAITING_TO_ON;
+    private BsStateType activationFixedCoalescing(final List<Task> tasksPending, final EventType eventType) {
+        if (eventType == EventType.NEW_STATE) {
+            return (!tasksPending.isEmpty()) ? BsStateType.WAITING_TO_ON : BsStateType.OFF;
         }
-
-        return null;
-    }
-
-    private BsStateType activationFixedCoalescing(final List<Task> tasksPending, final BsStateType stateBs, final EventType eventType) {
-        if (stateBs == BsStateType.OFF && !tasksPending.isEmpty() && eventType == EventType.NEW_STATE) {
-            return BsStateType.TO_ON;
-        } else if (stateBs == BsStateType.OFF && eventType == EventType.NEW_STATE) {
-            return BsStateType.OFF;
-        }
-
         return null;
     }
 

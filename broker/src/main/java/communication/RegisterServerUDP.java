@@ -8,8 +8,6 @@ import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import types.EntityType;
-import types.EventType;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -17,104 +15,61 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.Map;
 
-public class RegisterServerUDP extends Thread implements RegisterServer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServerUDP.class);
+public class RegisterServerUDP extends RegisterServer {
+    private static final int MSG_LEN = 50;
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
-    private final int port;
-    private final Map<Integer, Bs> listaBS;
-    private final Map<Integer, Ue> listaUE;
-    private final Map<Long, Event> events;
-    private final double t;
     private DatagramSocket sc;
 
-    public RegisterServerUDP(double t, int port, Map<Integer, Bs> listaBS, Map<Integer, Ue> listaUE, Map<Long, Event> events) {
-        this.port = port;
-        this.listaBS = listaBS;
-        this.listaUE = listaUE;
-        this.events = events;
-        this.t = t;
+    public RegisterServerUDP(double t, int port, Map<Integer, Bs> listBs, Map<Integer, Ue> listUe, Map<Long, Event> listEvent) {
+        super(t, port, listBs, listUe, listEvent);
     }
 
     @Override
-    public void run() {
-        LOGGER.info("Registered entities:");
+    public void runServer() {
         try {
             sc = new DatagramSocket(port);
             while (true) {
-                final byte[] data = new byte[50];
+                final byte[] data = new byte[MSG_LEN];
                 final DatagramPacket dp = new DatagramPacket(data, data.length);
                 sc.receive(dp);
-                final MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(dp.getData());
-                final int typeInt = unpacker.unpackInt();
-                final EntityType type = EntityType.getCommunicatorTypeTypeByCode(typeInt);
-
-                if (type == EntityType.UNADMITTED) {
-                    unpacker.close();
-                    return;
-                }
-
-                final double x = unpacker.unpackDouble();
-                final double y = unpacker.unpackDouble();
                 final InetAddress ad = dp.getAddress();
                 final int portEntity = dp.getPort();
-                unpacker.close();
-
                 final Communicator communicator = new CommunicatorUDP(sc, ad, portEntity);
+                final MessageUnpacker messageUnpacker = MessagePack.newDefaultUnpacker(dp.getData());
 
-                if (type == EntityType.USER_EQUIPMENT) {
-                    final Ue ue = new Ue(x, y, communicator);
-                    final long eventId = Event.getNextId();
-                    final Event trafficIngress = new Event(eventId, t, EventType.TRAFFIC_INGRESS, ue);
-                    listaUE.put(ue.getId(), ue);
-                    events.put(trafficIngress.id(), trafficIngress);
-                    ue.sendRegisterAck(ue.getId());
-                    LOGGER.info("UE [id={}] {}", ue.getId(), communicator);
-                } else if (type == EntityType.BASE_STATION) {
-                    final Bs bs = new Bs(x, y, communicator);
-                    final long eventId = Event.getNextId();
-                    final Event newState = new Event(eventId, t, EventType.NEW_STATE, bs);
-                    listaBS.put(bs.getId(), bs);
-                    events.put(newState.id(), newState);
-                    bs.sendRegisterAck(bs.getId());
-                    LOGGER.info("BS [id={}] {}", bs.getId(), communicator);
-                }
-
+                final boolean closeRegister = processRegister(communicator, messageUnpacker);
+                if (closeRegister) return;
             }
         } catch (Exception e) {
-            LOGGER.error("Log server error.. Execution completed", e);
+            log.error("Log server error. Execution completed", e);
             System.exit(-1);
         }
     }
 
     @Override
-    public void closeRegister() {
-        try (final MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
-            final DatagramSocket scAux = new DatagramSocket();
-            final InetAddress adR = InetAddress.getByName("localhost");
-            packer.packInt(0).close();
+    public void closeRegisterServer(final MessageBufferPacker packer) {
+        try (final DatagramSocket scAux = new DatagramSocket()) {
+            packer.close();
             final byte[] message = packer.toByteArray();
+            final InetAddress adR = InetAddress.getByName("localhost");
             final DatagramPacket dp = new DatagramPacket(message, message.length, adR, port);
             scAux.send(dp);
-            scAux.close();
         } catch (IOException e) {
-            LOGGER.error("Failed to shut down the log server. Execution completed", e);
+            log.error("Failed to shut down the log server. Execution completed", e);
             System.exit(-1);
         }
     }
 
+
     @Override
-    public void closeSockets() {
+    void close() {
         try {
-            for (var entry : listaBS.entrySet())
-                entry.getValue().closeSocket();
-
-            for (var entry : listaUE.entrySet())
-                entry.getValue().closeSocket();
-
-            sc.close();
+            if (sc != null && !sc.isClosed()) {
+                sc.close();
+            }
         } catch (Exception e) {
-            LOGGER.error("Failed to close the sockets. Execution completed", e);
-            System.exit(-1);
+            log.error("Failed to shut down the server. Execution completed", e);
         }
     }
 

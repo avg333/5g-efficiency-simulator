@@ -12,9 +12,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
-public class CommunicatorTCP implements Communicator {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CommunicatorTCP.class);
-    private static final int TIMEOUT = 0;
+public class CommunicatorTCP extends Communicator {
+    private final Logger log = LoggerFactory.getLogger(getClass());
     private Socket clientSocket;
     private DataOutputStream out;
     private DataInputStream in;
@@ -31,17 +30,9 @@ public class CommunicatorTCP implements Communicator {
             clientSocket.setSoTimeout(TIMEOUT);
             out = new DataOutputStream(clientSocket.getOutputStream());
             in = new DataInputStream(clientSocket.getInputStream());
-            LOGGER.debug("Trying to register the {} with the host {} in the port {}", type, clientSocket.getInetAddress(), clientSocket.getPort());
-            packer.packInt(type.value);
-            packer.packDouble(x);
-            packer.packDouble(y);
-            this.sendMessage(packer);
-            final MessageUnpacker unpacker = this.receiveMessage(10);
-            final int id = unpacker.unpackInt();
-            unpacker.close();
-            LOGGER.debug("Registered the {} with id {}", type, id);
+            register(type, clientSocket.getInetAddress(), clientSocket.getPort(), x, y, packer);
         } catch (Exception e) {
-            LOGGER.error("Registration failed. Execution completed", e);
+            log.error("Registration failed. Execution completed", e);
             System.exit(-1);
         }
     }
@@ -54,7 +45,7 @@ public class CommunicatorTCP implements Communicator {
             in.readFully(data, 0, data.length);
             return MessagePack.newDefaultUnpacker(data);
         } catch (Exception e) {
-            LOGGER.error("Error trying to receive a message. Execution completed", e);
+            log.error("Error trying to receive a message. Execution completed", e);
             this.close();
             System.exit(-1);
         }
@@ -70,7 +61,7 @@ public class CommunicatorTCP implements Communicator {
             out.writeInt(message.length);
             out.write(message);
         } catch (Exception e) {
-            LOGGER.error("Error trying to send a message. Execution completed", e);
+            log.error("Error trying to send a message. Execution completed", e);
             this.close();
             System.exit(-1);
         }
@@ -80,16 +71,16 @@ public class CommunicatorTCP implements Communicator {
     public void close() {
         try {
             if (in != null) in.close();
-            out.close();
-            clientSocket.close();
+            if (out != null) out.close();
+            if (clientSocket != null && !clientSocket.isClosed()) clientSocket.close();
         } catch (Exception e) {
-            LOGGER.error("Error trying to close the socket. Execution completed", e);
+            log.error("Error trying to close the socket. Execution completed", e);
             System.exit(-1);
         }
     }
 
     @Override
     public String toString() {
-        return "ad=" + clientSocket.getInetAddress().getHostAddress() + ", portBroker=" + clientSocket.getPort();
+        return "ad=" + clientSocket.getInetAddress().getHostAddress() + ", port=" + clientSocket.getPort();
     }
 }

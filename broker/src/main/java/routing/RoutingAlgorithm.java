@@ -4,12 +4,8 @@ import entities.Bs;
 import entities.Ue;
 
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public record RoutingAlgorithm(RoutingAlgorithmMode mode) {
-
-    private static final Logger LOGGER = Logger.getLogger(RoutingAlgorithm.class.getName());
 
     private static double distanceVector(double xUe, double yUe, double xBs, double yBs) {
         final double leg1 = xUe - xBs;
@@ -18,11 +14,6 @@ public record RoutingAlgorithm(RoutingAlgorithmMode mode) {
     }
 
     public Bs getBs(Ue ue, Map<Integer, Bs> listBs) {
-
-        if (listBs.isEmpty()) {
-            LOGGER.log(Level.SEVERE, "The BS list is empty. Execution completed");
-            System.exit(-1);
-        }
 
         Bs bs = null;
         double distanceMin = -1;

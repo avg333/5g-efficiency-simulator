@@ -1,7 +1,7 @@
 package types;
 
 public enum EntityType {
-    USER_EQUIPMENT(1), BASE_STATION(2), BROKER(3), UNADMITTED(0);
+    USER_EQUIPMENT(1), BASE_STATION(2), BROKER(3);
 
     public final int value;
 
@@ -13,6 +13,6 @@ public enum EntityType {
         for (EntityType e : EntityType.values()) {
             if (code == e.value) return e;
         }
-        return UNADMITTED;
+        throw new IllegalArgumentException("Value " + code + " not supported for the entity type");
     }
 }

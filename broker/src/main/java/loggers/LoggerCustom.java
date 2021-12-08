@@ -22,12 +22,12 @@ public class LoggerCustom {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerCustom.class);
 
-    private static final int AVANCE = 1;
-    private static final String[] COLUMNS = {"T", "ENTIDAD", "ID", "EVENTO", "TAREA", "L", "A", "X", "Y",
+    private static final int ADVANCE = 1;
+    private static final String[] COLUMNS = {"T", "ENTITY", "ID", "EVENT", "TASK", "L", "A", "X", "Y",
             "FROM-UE", "TO-BS", "Q", "W", "STATE"};
     private final boolean printCsv;
     private final SimpleDateFormat formatter;
-    private int aux = AVANCE;
+    private int aux = ADVANCE;
     private FileWriter out;
     private CSVPrinter printer;
 
@@ -44,25 +44,12 @@ public class LoggerCustom {
         }
     }
 
-    public void close() {
-        try {
-            if (out != null) {
-                out.close();
-            }
-            if (printer != null) {
-                printer.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void printProgress(double current, double total) {
         if (current / total * 100 <= aux) {
             return;
         }
 
-        aux += AVANCE;
+        aux += ADVANCE;
 
         int percent = (int) (current * 100 / total);
         String string = '\r' +
@@ -77,12 +64,13 @@ public class LoggerCustom {
         System.out.print(string);
     }
 
-    public void imprimirResultados(long elapsedTime, double t, Map<Integer, Bs> listaBS, Map<Integer, Ue> listaUE) {
-        LOGGER.info("Fin de la simulacion. Tiempo de ejecucion: {}s", elapsedTime / 1000);
-        imprimirResumen(elapsedTime, t, listaBS, listaUE);
+    public void printResults(long elapsedTime, double t, Map<Integer, Bs> listaBS, Map<Integer, Ue> listaUE) {
+        LOGGER.info("End of simulation. Execution time: {}s", elapsedTime / 1000);
+        printResume(elapsedTime, t, listaBS, listaUE);
+        close();
     }
 
-    public void imprimirResumen(long elapsedTime, double t, Map<Integer, Bs> listaBS, Map<Integer, Ue> listaUE) {
+    private void printResume(long elapsedTime, double t, Map<Integer, Bs> listaBS, Map<Integer, Ue> listaUE) {
         double eQ = 0;
         double eW = 0;
         double eL = 0;
@@ -124,6 +112,19 @@ public class LoggerCustom {
                                 + " E[A]: " + (entry.getValue().geteA()) + ".\n");
         } catch (IOException e) {
             LOGGER.error("Error al imprimir el archivo resumen.txt.", e);
+        }
+    }
+
+    private void close() {
+        try {
+            if (out != null) {
+                out.close();
+            }
+            if (printer != null) {
+                printer.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

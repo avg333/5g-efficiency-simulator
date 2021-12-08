@@ -4,23 +4,22 @@ import communication.Communicator;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import types.EventType;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-public class Entity {
-
-    private static final Logger LOGGER = Logger.getLogger(Entity.class.getName());
+public abstract class Entity {
 
     private static final int RESPONSE_MSG_LEN = 100;
-
+    private static int idCounter = 1;
+    private final Logger log = LoggerFactory.getLogger(getClass());
     private final Communicator communicator;
+    private final int id;
     private double x;
     private double y;
-    private int id;
 
-    public Entity(double x, double y, Communicator communicator) {
+    Entity(double x, double y, Communicator communicator) {
+        this.id = idCounter++;
         this.x = x;
         this.y = y;
         this.communicator = communicator;
@@ -28,10 +27,6 @@ public class Entity {
 
     public int getId() {
         return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public double getX() {
@@ -55,7 +50,7 @@ public class Entity {
             packer.packInt(id);
             communicator.sendMessage(packer);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Failed to send the register ACK. Execution completed", e);
+            log.error("Failed to send the register ACK. Execution completed", e);
             System.exit(-1);
         }
     }
@@ -70,7 +65,7 @@ public class Entity {
             packer.packInt(EventType.CLOSE.value);
             communicator.sendMessage(packer);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Failed to close the socket. Execution completed", e);
+            log.error("Failed to close the socket. Execution completed", e);
             System.exit(-1);
         }
     }

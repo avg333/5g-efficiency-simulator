@@ -4,15 +4,12 @@ import communication.Communicator;
 
 public class Ue extends Entity {
 
-    private static int idCounter = 0;
-
     private double eL = 0.0;
     private double eA = 0.0;
     private long taskCounter = 0;
 
     public Ue(double x, double y, Communicator communicator) {
         super(x, y, communicator);
-        this.setId(idCounter++);
     }
 
     public void addTask(double x, double y, double l, double a) {

@@ -1,7 +1,7 @@
 package algorithm;
 
 public enum AlgorithmMode {
-    NO_COALESCING('N'), SIZE_BASED_COALESCING('S'), TIME_BASED_COALESCING('T'), FIXED_COALESCING('F');
+    NO_COALESCING('n'), SIZE_BASED_COALESCING('s'), TIME_BASED_COALESCING('t'), FIXED_COALESCING('f');
 
     private final char value;
 
