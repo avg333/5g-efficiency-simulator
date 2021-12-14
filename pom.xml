@@ -9,6 +9,7 @@
     <version>2.0</version>
     <packaging>pom</packaging>
     <modules>
+
         <module>broker</module>
         <module>bs</module>
         <module>ue</module>

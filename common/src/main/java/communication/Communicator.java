@@ -11,10 +11,10 @@ import java.net.InetAddress;
 
 public abstract class Communicator {
     static final int TIMEOUT = 0;
-    private static final Logger LOGGER = LoggerFactory.getLogger(Communicator.class);
-
+    private final Logger log = LoggerFactory.getLogger(getClass());
+    
     void register(EntityType type, InetAddress ad, int portBroker, double x, double y, MessageBufferPacker packer) throws IOException {
-        LOGGER.debug("Trying to register the {} with the host {} in the port {}", type, ad, portBroker);
+        log.debug("Trying to register the {} with the host {} in the port {}", type, ad, portBroker);
         packer.packInt(type.value);
         packer.packDouble(x);
         packer.packDouble(y);
@@ -22,7 +22,7 @@ public abstract class Communicator {
         final MessageUnpacker messageUnpacker = this.receiveMessage(10);
         final int id = messageUnpacker.unpackInt();
         messageUnpacker.close();
-        LOGGER.debug("Registered the {} with id {}", type, id);
+        log.debug("Registered the {} with id {}", type, id);
     }
 
     public abstract MessageUnpacker receiveMessage(int dataLen);

@@ -20,9 +20,9 @@ import java.io.InputStream;
 import java.util.*;
 
 public class Broker extends Thread {
-    private static final Logger LOGGER = LoggerFactory.getLogger(Broker.class);
     private static final String PROP_FILE_NAME = "config.properties";
 
+    private final Logger log = LoggerFactory.getLogger(getClass());
     private final RegisterServer server;
     private final RoutingAlgorithm routingAlgorithm;
     private final double tFinal;
@@ -40,7 +40,7 @@ public class Broker extends Thread {
         try (final InputStream inputStream = getClass().getClassLoader().getResourceAsStream(PROP_FILE_NAME)) {
             prop.load(inputStream);
         } catch (Exception e) {
-            LOGGER.error("Error loading the properties. Execution completed", e);
+            log.error("Error loading the properties. Execution completed", e);
             System.exit(-1);
         }
 
@@ -58,8 +58,8 @@ public class Broker extends Thread {
 
         loggerCustom = new LoggerCustom(eventsLog);
 
-        LOGGER.info("Started in [port={}] with {}, simulator time [t={}] and {}", port, routingAlgorithm, tFinal, loggerCustom);
-        LOGGER.info("Press enter to start the simulation");
+        log.info("Started in [port={}] with {}, simulator time [t={}] and {}", port, routingAlgorithm, tFinal, loggerCustom);
+        log.info("Press enter to start the simulation");
     }
 
     public static void main(String[] args) {
@@ -81,7 +81,7 @@ public class Broker extends Thread {
             case TRAFFIC_EGRESS -> processTrafficEgress(event);
             case NEW_STATE -> processNewState(event);
             default -> {
-                LOGGER.error("Type {} not supported. Execution completed", type);
+                log.error("Type {} not supported. Execution completed", type);
                 System.exit(-1);
             }
         }
@@ -116,7 +116,7 @@ public class Broker extends Thread {
 
             processTrafficArrive(taskId, size, bs);
         } catch (Exception e) {
-            LOGGER.error("An attempt to pack / unpack a Traffic Ingress message failed. Execution completed", e);
+            log.error("An attempt to pack / unpack a Traffic Ingress message failed. Execution completed", e);
             System.exit(-1);
         }
     }
@@ -158,7 +158,7 @@ public class Broker extends Thread {
             bs.addQ(q, t);
             bs.setState(state);
         } catch (Exception e) {
-            LOGGER.error("An attempt to pack / unpack a Traffic Arrive message failed. Execution completed", e);
+            log.error("An attempt to pack / unpack a Traffic Arrive message failed. Execution completed", e);
             System.exit(-1);
         }
     }
@@ -192,7 +192,7 @@ public class Broker extends Thread {
             bs.addW(w);
             bs.setState(state);
         } catch (Exception e) {
-            LOGGER.error("An attempt to pack / unpack a Traffic Egress message failed. Execution completed", e);
+            log.error("An attempt to pack / unpack a Traffic Egress message failed. Execution completed", e);
             System.exit(-1);
         }
     }
@@ -220,7 +220,7 @@ public class Broker extends Thread {
 
             bs.setState(state);
         } catch (Exception e) {
-            LOGGER.error("An attempt to pack / unpack a New State message failed. Execution completed", e);
+            log.error("An attempt to pack / unpack a New State message failed. Execution completed", e);
             System.exit(-1);
         }
 
