@@ -8,9 +8,10 @@ import communication.model.TrafficIngressResponseDto;
 import communication.model.base.Dto;
 import distribution.Distribution;
 import domain.Position;
-import domain.Task;
 import entity.BaseEntity;
 import lombok.extern.slf4j.Slf4j;
+import task.Task;
+import task.TaskGenerator;
 import types.EntityType;
 
 @Slf4j
@@ -64,7 +65,7 @@ public class UserEquipment extends BaseEntity {
   protected void processTrafficIngress() {
     final Task task = taskGenerator.generateTask();
     position.move(mobilityDist.getRandom(), mobilityDist.getRandom());
-    sendMessage(new TrafficIngressResponseDto(position, task));
+    sendMessage(new TrafficIngressResponseDto(position, task.size(), task.tUntilNextTask()));
     log.debug("Generated task {} in position {}", task, position);
   }
 }

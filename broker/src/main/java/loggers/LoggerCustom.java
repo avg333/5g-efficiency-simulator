@@ -10,7 +10,6 @@ import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.slf4j.Logger;
@@ -163,7 +162,7 @@ public class LoggerCustom {
         EventType.TRAFFIC_INGRESS,
         task.id(),
         task.size(),
-        task.tArrive(),
+        task.tArrivalTime(),
         ue.getPosition().getX(),
         ue.getPosition().getY());
     if (printCsv) {
@@ -175,7 +174,7 @@ public class LoggerCustom {
             EventType.TRAFFIC_INGRESS,
             task.id(),
             task.size(),
-            task.tArrive(),
+            task.tArrivalTime(),
             ue.getPosition().getX(),
             ue.getPosition().getY(),
             null,

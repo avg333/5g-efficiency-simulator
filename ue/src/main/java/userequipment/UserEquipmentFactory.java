@@ -7,6 +7,7 @@ import config.Config;
 import distribution.Distribution;
 import distribution.DistributionMode;
 import domain.Position;
+import task.TaskGenerator;
 
 public class UserEquipmentFactory {
 

@@ -25,6 +25,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import task.TaskGenerator;
 
 @ExtendWith(MockitoExtension.class)
 class UserEquipmentTest {
@@ -105,9 +106,7 @@ class UserEquipmentTest {
     assertThat(response.getPosition()).isNotNull();
     // assertThat(response.getPosition().getX()).isEqualTo(X_START + time * MOVE_INCREMENT); FIXME
     // assertThat(response.getPosition().getY()).isEqualTo(Y_START + time * MOVE_INCREMENT); FIXME
-    assertThat(response.getTask()).isNotNull();
-    assertThat(response.getTask().id()).isZero();
-    assertThat(response.getTask().size()).isEqualTo(TASK_SIZE);
-    assertThat(response.getTask().tArrive()).isEqualTo(TASK_DELAY);
+    assertThat(response.getSize()).isEqualTo(TASK_SIZE);
+    assertThat(response.getTUntilNextTask()).isEqualTo(TASK_DELAY);
   }
 }

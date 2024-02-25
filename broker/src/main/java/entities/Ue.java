@@ -17,7 +17,7 @@ public class Ue extends Entity {
   public void addTask(Position position, Task task) {
     this.setPosition(position);
     eL += task.size();
-    eA += task.tArrive();
+    eA += task.tArrivalTime();
     taskCounter++;
   }
 

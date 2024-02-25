@@ -90,11 +90,10 @@ public class DtoFactory {
 
   private TrafficArrivalRequestDto createTrafficArrivalRequestDto(
       final MessageUnpacker messageUnpacker) throws IOException {
-    final double tArrive = messageUnpacker.unpackDouble();
     final long id = messageUnpacker.unpackLong();
     final double size = messageUnpacker.unpackDouble();
-    final Task task = new Task(id, size, tArrive);
-    return new TrafficArrivalRequestDto(task);
+    final double tArrive = messageUnpacker.unpackDouble();
+    return new TrafficArrivalRequestDto(new Task(id, size, tArrive, 0.0));
   }
 
   private TrafficArrivalResponseDto createTrafficArrivalResponseDto(
@@ -143,6 +142,6 @@ public class DtoFactory {
     double y = messageUnpacker.unpackDouble();
     double size = messageUnpacker.unpackDouble();
     double delay = messageUnpacker.unpackDouble();
-    return new TrafficIngressResponseDto(new Position(x, y), new Task(0, size, delay));
+    return new TrafficIngressResponseDto(new Position(x, y), size, delay);
   }
 }

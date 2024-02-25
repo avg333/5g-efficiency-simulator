@@ -8,7 +8,6 @@ import lombok.ToString;
 @RequiredArgsConstructor
 public class Distribution {
 
-  // TODO Maybe change to ThreadLocalRandom
   private final Random rand = new Random();
 
   private final DistributionMode distributionMode;
