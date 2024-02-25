@@ -1,14 +1,17 @@
 package broker;
 
 import entities.Entity;
-import types.EventType;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-public record Event(long id, double t, EventType type, Entity entity) {
+@Getter
+@RequiredArgsConstructor
+public class Event {
 
-    private static long counter = 0;
+  private static long totalEvents = 0;
 
-    public static long getNextId() {
-        return counter++;
-    }
-
+  private final long id = totalEvents++;
+  private final double t;
+  private final EventType type;
+  private final Entity entity;
 }

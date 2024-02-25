@@ -1,33 +1,59 @@
 package communication;
 
-import org.msgpack.core.MessageBufferPacker;
-import org.msgpack.core.MessageUnpacker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static communication.model.base.DtoIdentifier.REGISTER_RESPONSE;
+
+import communication.model.RegisterRequestDto;
+import communication.model.RegisterResponseDto;
+import communication.model.base.Dto;
+import domain.Position;
+import exception.MessageProcessingException;
+import java.io.IOException;
+import lombok.extern.slf4j.Slf4j;
 import types.EntityType;
 
-import java.io.IOException;
-import java.net.InetAddress;
-
+@Slf4j
 public abstract class Communicator {
-    static final int TIMEOUT = 0;
-    private final Logger log = LoggerFactory.getLogger(getClass());
-    
-    void register(EntityType type, InetAddress ad, int portBroker, double x, double y, MessageBufferPacker packer) throws IOException {
-        log.debug("Trying to register the {} with the host {} in the port {}", type, ad, portBroker);
-        packer.packInt(type.value);
-        packer.packDouble(x);
-        packer.packDouble(y);
-        this.sendMessage(packer);
-        final MessageUnpacker messageUnpacker = this.receiveMessage(10);
-        final int id = messageUnpacker.unpackInt();
-        messageUnpacker.close();
-        log.debug("Registered the {} with id {}", type, id);
+  private static final int REGISTER_RESPONSE_SIZE = REGISTER_RESPONSE.getSize();
+
+  private final DtoFactory dtoFactory = new DtoFactory();
+  protected static final int TIMEOUT = 0;
+
+  public final void register(final EntityType type, final Position position) {
+    log.debug("Trying to register the {}", type);
+    final RegisterResponseDto registerResponseDto =
+        (RegisterResponseDto)
+            communicate(new RegisterRequestDto(type, position), REGISTER_RESPONSE_SIZE);
+    log.debug("Registered the {} with id {}", type, registerResponseDto.getId());
+  }
+
+  public final Dto communicate(final Dto dto, final int dataLen) {
+    this.sendMessage(dto);
+    return this.receiveMessage(dataLen);
+  }
+
+  public final Dto receiveMessage(final int dataLen) {
+    try {
+      return dtoFactory.createDto(receive(dataLen));
+    } catch (IOException e) {
+      log.error("Error trying to receive a message", e);
+      this.close();
+      throw new MessageProcessingException("Error trying to receive a message", e);
     }
+  }
 
-    public abstract MessageUnpacker receiveMessage(int dataLen);
+  public final void sendMessage(final Dto dto) {
+    try {
+      send(dto.toByteArray());
+    } catch (IOException e) {
+      log.error("Error trying to send a message", e);
+      this.close();
+      throw new MessageProcessingException("Error trying to send a message", e);
+    }
+  }
 
-    public abstract void sendMessage(MessageBufferPacker packer);
+  protected abstract void send(byte[] message) throws IOException;
 
-    public abstract void close();
+  protected abstract byte[] receive(int dataLen) throws IOException;
+
+  public abstract void close();
 }

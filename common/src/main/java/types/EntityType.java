@@ -1,18 +1,25 @@
 package types;
 
+import java.util.Arrays;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
 public enum EntityType {
-    USER_EQUIPMENT(1), BASE_STATION(2), BROKER(3);
+  USER_EQUIPMENT(1),
+  BASE_STATION(2),
+  BROKER(3);
 
-    public final int value;
+  private final int value;
 
-    EntityType(final int value) {
-        this.value = value;
-    }
-
-    public static EntityType getCommunicatorTypeTypeByCode(int code) {
-        for (EntityType e : EntityType.values()) {
-            if (code == e.value) return e;
-        }
-        throw new IllegalArgumentException("Value " + code + " not supported for the entity type");
-    }
+  public static EntityType getCommunicatorTypeTypeByCode(final int code) {
+    return Arrays.stream(values())
+        .filter(communicatorType -> communicatorType.getValue() == code)
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Value " + code + " not supported for the communicator type"));
+  }
 }

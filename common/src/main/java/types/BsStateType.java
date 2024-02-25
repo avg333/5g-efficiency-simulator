@@ -1,18 +1,31 @@
 package types;
 
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
 public enum BsStateType {
-    ON(1), OFF(2), TO_ON(3), TO_OFF(4), HYSTERESIS(-1), WAITING_TO_ON(-2);
+  ON((byte) 1),
+  OFF((byte) 2),
+  TO_ON((byte) 3),
+  TO_OFF((byte) 4),
+  HYSTERESIS((byte) -1),
+  WAITING_TO_ON((byte) -2);
 
-    public final int value;
+  private final byte value;
 
-    BsStateType(final int value) {
-        this.value = value;
+  private static final Map<Byte, BsStateType> BY_VALUE_MAP =
+      Stream.of(values()).collect(Collectors.toMap(BsStateType::getValue, stateType -> stateType));
+
+  public static BsStateType getStateTypeByCode(final byte code) {
+    final BsStateType result = BY_VALUE_MAP.get(code);
+    if (result == null) {
+      throw new IllegalArgumentException("Value " + code + " not supported for the bs state type");
     }
-
-    public static BsStateType getStateTypeByCode(int code) {
-        for (BsStateType e : BsStateType.values()) {
-            if (code == e.value) return e;
-        }
-        throw new IllegalArgumentException("Value " + code + " not supported for the bs state type");
-    }
+    return result;
+  }
 }

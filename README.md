@@ -1,10 +1,12 @@
 # Simulador de Eficiencia en Redes 5G
 
-Proyecto fin de grado del Grado en Ingeniería de Tecnologías de Telecomunicación de la Universidad de Vigo.
+Proyecto fin de grado del Grado en Ingeniería de Tecnologías de Telecomunicación de la Universidad
+de Vigo.
 
 ## Prerrequisitos
 
-Para la compilación y ejecución del programa necesitaremos una máquina con **Java JDK 17** y **Apache Maven 3.8.4**.
+Para la compilación y ejecución del programa necesitaremos una máquina con **Java JDK 17** y *
+*Apache Maven 3.8.4**.
 
 ## Instalación
 

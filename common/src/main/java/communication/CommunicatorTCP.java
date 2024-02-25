@@ -1,86 +1,79 @@
 package communication;
 
-import org.msgpack.core.MessageBufferPacker;
-import org.msgpack.core.MessagePack;
-import org.msgpack.core.MessageUnpacker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import types.EntityType;
-
+import exception.CommunicatorCreationException;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class CommunicatorTCP extends Communicator {
-    private final Logger log = LoggerFactory.getLogger(getClass());
-    private Socket clientSocket;
-    private DataOutputStream out;
-    private DataInputStream in;
+  private final Socket clientSocket;
+  private final DataOutputStream out;
+  private final DataInputStream in;
 
-    public CommunicatorTCP(final Socket clientSocket) throws IOException {
-        this.clientSocket = clientSocket;
-        out = new DataOutputStream(clientSocket.getOutputStream());
-        in = new DataInputStream(clientSocket.getInputStream());
+  private static Socket createSocket(final String ip, final int port) {
+    try {
+      return new Socket(ip, port);
+    } catch (IOException e) {
+      log.error("Error trying to create the socket", e);
+      throw new CommunicatorCreationException(e);
     }
+  }
 
-    public CommunicatorTCP(final EntityType type, final String ip, final int port, final double x, final double y) {
-        try (final MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
-            clientSocket = new Socket(ip, port);
-            clientSocket.setSoTimeout(TIMEOUT);
-            out = new DataOutputStream(clientSocket.getOutputStream());
-            in = new DataInputStream(clientSocket.getInputStream());
-            register(type, clientSocket.getInetAddress(), clientSocket.getPort(), x, y, packer);
-        } catch (Exception e) {
-            log.error("Registration failed. Execution completed", e);
-            System.exit(-1);
-        }
+  public CommunicatorTCP(final Socket clientSocket) {
+    try {
+      this.clientSocket = clientSocket;
+      this.clientSocket.setSoTimeout(TIMEOUT);
+      this.out = new DataOutputStream(clientSocket.getOutputStream());
+      this.in = new DataInputStream(clientSocket.getInputStream());
+    } catch (IOException e) {
+      log.error("Error trying to create the socket", e);
+      throw new CommunicatorCreationException(e);
     }
+  }
 
-    @Override
-    public MessageUnpacker receiveMessage(final int dataLen) {
-        try {
-            final int length = in.readInt();
-            byte[] data = new byte[length];
-            in.readFully(data, 0, data.length);
-            return MessagePack.newDefaultUnpacker(data);
-        } catch (Exception e) {
-            log.error("Error trying to receive a message. Execution completed", e);
-            this.close();
-            System.exit(-1);
-        }
+  public CommunicatorTCP(final String ip, final int port) {
+    this(createSocket(ip, port));
+  }
 
-        return null;
+  @Override
+  protected final void send(final byte[] message) throws IOException {
+    out.writeInt(message.length);
+    out.write(message);
+    out.flush(); // TODO: check if this is necessary
+  }
+
+  @Override
+  protected final byte[] receive(final int dataLen) throws IOException {
+    final byte[] data = new byte[in.readInt()];
+    in.readFully(data, 0, data.length);
+    return data;
+  }
+
+  @Override
+  public final void close() {
+    closeResource(in, "input stream");
+    closeResource(out, "output stream");
+    closeResource(clientSocket, "socket");
+  }
+
+  private void closeResource(final AutoCloseable resource, final String resourceName) {
+    if (resource != null) {
+      try {
+        resource.close();
+      } catch (Exception e) {
+        log.error("Error trying to close the " + resourceName + ".", e);
+      }
     }
+  }
 
-    @Override
-    public void sendMessage(final MessageBufferPacker packer) {
-        try {
-            packer.close();
-            final byte[] message = packer.toByteArray();
-            out.writeInt(message.length);
-            out.write(message);
-        } catch (Exception e) {
-            log.error("Error trying to send a message. Execution completed", e);
-            this.close();
-            System.exit(-1);
-        }
-    }
-
-    @Override
-    public void close() {
-        try {
-            if (in != null) in.close();
-            if (out != null) out.close();
-            if (clientSocket != null && !clientSocket.isClosed()) clientSocket.close();
-        } catch (Exception e) {
-            log.error("Error trying to close the socket. Execution completed", e);
-            System.exit(-1);
-        }
-    }
-
-    @Override
-    public String toString() {
-        return "ad=" + clientSocket.getInetAddress().getHostAddress() + ", port=" + clientSocket.getPort();
-    }
+  @Override
+  public String toString() {
+    return "ad="
+        + clientSocket.getInetAddress().getHostAddress()
+        + ", port="
+        + clientSocket.getPort();
+  }
 }

@@ -1,73 +1,35 @@
 package entities;
 
 import communication.Communicator;
-import org.msgpack.core.MessageBufferPacker;
-import org.msgpack.core.MessagePack;
-import org.msgpack.core.MessageUnpacker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import types.EventType;
+import communication.model.CloseEntityDto;
+import communication.model.base.Dto;
+import domain.Position;
+import lombok.Getter;
+import lombok.Setter;
 
 public abstract class Entity {
 
-    private static final int RESPONSE_MSG_LEN = 100;
-    private static int idCounter = 1;
-    private final Logger log = LoggerFactory.getLogger(getClass());
-    private final Communicator communicator;
-    private final int id;
-    private double x;
-    private double y;
+  private static int idCounter = 1;
 
-    Entity(double x, double y, Communicator communicator) {
-        this.id = idCounter++;
-        this.x = x;
-        this.y = y;
-        this.communicator = communicator;
-    }
+  private final Communicator communicator;
+  @Getter private final int id;
 
-    public int getId() {
-        return id;
-    }
+  @Getter
+  @Setter(value = lombok.AccessLevel.PROTECTED)
+  private Position position;
 
-    public double getX() {
-        return x;
-    }
+  Entity(Position position, Communicator communicator) {
+    this.id = idCounter++;
+    this.position = position;
+    this.communicator = communicator;
+  }
 
-    public void setX(double x) {
-        this.x = x;
-    }
+  public Dto communicate(final Dto dto, final int msgLen) {
+    // TODO Obtains the response length from the request
+    return communicator.communicate(dto, msgLen);
+  }
 
-    public double getY() {
-        return y;
-    }
-
-    public void setY(double y) {
-        this.y = y;
-    }
-
-    public void sendRegisterAck(final int id) {
-        try (final MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
-            packer.packInt(id);
-            communicator.sendMessage(packer);
-        } catch (Exception e) {
-            log.error("Failed to send the register ACK. Execution completed", e);
-            System.exit(-1);
-        }
-    }
-
-    public MessageUnpacker communicate(final MessageBufferPacker packer) {
-        communicator.sendMessage(packer);
-        return communicator.receiveMessage(RESPONSE_MSG_LEN);
-    }
-
-    public void closeSocket() {
-        try (final MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
-            packer.packInt(EventType.CLOSE.value);
-            communicator.sendMessage(packer);
-        } catch (Exception e) {
-            log.error("Failed to close the socket. Execution completed", e);
-            System.exit(-1);
-        }
-    }
-
+  public void closeSocket() {
+    communicator.sendMessage(new CloseEntityDto());
+  }
 }

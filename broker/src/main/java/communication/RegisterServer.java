@@ -1,107 +1,107 @@
 package communication;
 
-import broker.Event;
+import static communication.model.base.DtoIdentifier.REGISTER_REQUEST;
+
+import communication.model.CloseBrokerDto;
+import communication.model.RegisterRequestDto;
+import communication.model.RegisterResponseDto;
+import communication.model.base.Dto;
+import domain.Position;
 import entities.Bs;
+import entities.Entity;
 import entities.Ue;
-import org.msgpack.core.MessageBufferPacker;
-import org.msgpack.core.MessagePack;
-import org.msgpack.core.MessageUnpacker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import types.EntityType;
-import types.EventType;
-
+import exception.MessageProcessingException;
+import exception.NotSupportedActionException;
 import java.io.IOException;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import types.EntityType;
 
-public abstract class RegisterServer extends Thread {
-    final int port;
-    final Map<Integer, Bs> listBs;
-    final Map<Integer, Ue> listUe;
-    final Map<Long, Event> listEvent;
-    final double t;
-    private final Logger log = LoggerFactory.getLogger(getClass());
+@Slf4j
+@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
+public abstract class RegisterServer {
+  protected static final int MSG_LEN = REGISTER_REQUEST.getSize();
 
-    RegisterServer(double t, int port, Map<Integer, Bs> listBs, Map<Integer, Ue> listUe, Map<Long, Event> listEvent) {
-        this.port = port;
-        this.listBs = listBs;
-        this.listUe = listUe;
-        this.listEvent = listEvent;
-        this.t = t;
+  protected final int port;
+  private final List<Entity> entities = new ArrayList<>();
+
+  public List<Entity> getEntities() {
+    log.info("Registered entities:");
+    new Thread(this::runServer).start();
+    waitForEnter();
+    closeRegisterServer(new CloseBrokerDto());
+    return entities;
+  }
+
+  public void closeSockets() {
+    entities.stream().parallel().forEach(Entity::closeSocket);
+    close();
+  }
+
+  private static void waitForEnter() {
+    try (final Scanner in = new Scanner(System.in)) {
+      in.nextLine();
+    }
+  }
+
+  private void closeRegisterServer(final Dto dto) {
+    try {
+      sendCloseMsgToServer(dto);
+    } catch (IOException e) {
+      log.error("Failed to stop the register server", e);
+      closeSockets();
+      throw new MessageProcessingException("Failed to stop the register server", e);
+    }
+  }
+
+  protected abstract void sendCloseMsgToServer(Dto dto) throws IOException;
+
+  protected abstract void runServer();
+
+  protected abstract void close();
+
+  protected boolean processDto(final Dto dto, final Communicator communicator) {
+    return switch (dto.getIdentifier()) {
+      case CLOSE_BROKER -> true;
+      case REGISTER_REQUEST -> processRegister(communicator, (RegisterRequestDto) dto);
+      default -> {
+        log.error("Invalid message received");
+        throw new NotSupportedActionException(dto);
+      }
+    };
+  }
+
+  private boolean processRegister(
+      Communicator communicator, RegisterRequestDto registerRequestDto) {
+    final EntityType type = registerRequestDto.getType();
+
+    switch (type) {
+      case BROKER -> {
+        // If the sender is the broker, the server should stop
+        return true;
+      }
+      case USER_EQUIPMENT -> registerUe(registerRequestDto.getPosition(), communicator);
+      case BASE_STATION -> registerBs(registerRequestDto.getPosition(), communicator);
     }
 
-    @Override
-    public void run() {
-        log.info("Registered entities:");
-        runServer();
-    }
+    return false;
+  }
 
-    public void closeSockets() {
-        try {
-            for (var entry : listBs.entrySet())
-                entry.getValue().closeSocket();
+  private void registerBs(final Position position, final Communicator communicator) {
+    final Bs bs = new Bs(position, communicator);
+    entities.add(bs);
+    communicator.sendMessage(new RegisterResponseDto(bs.getId()));
+    log.info("BS [id={}] {}", bs.getId(), communicator);
+  }
 
-            for (var entry : listUe.entrySet())
-                entry.getValue().closeSocket();
-
-            close();
-        } catch (Exception e) {
-            log.error("Failed to close the sockets. Execution completed", e);
-            System.exit(-1);
-        }
-    }
-
-    public void closeRegister() {
-        try (final MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
-            packer.packInt(EntityType.BROKER.value);
-            closeRegisterServer(packer);
-        } catch (IOException e) {
-            log.error("Failed to shut down the log server. Execution completed", e);
-            System.exit(-1);
-        }
-    }
-
-    abstract void closeRegisterServer(MessageBufferPacker packer);
-
-    abstract void runServer();
-
-    abstract void close();
-
-    boolean processRegister(Communicator communicator, MessageUnpacker messageUnpacker) throws IOException {
-        final int typeInt = messageUnpacker.unpackInt();
-        final EntityType type = EntityType.getCommunicatorTypeTypeByCode(typeInt);
-
-        if (type == EntityType.BROKER) {
-            messageUnpacker.close();
-            return true;
-        }
-
-        final double x = messageUnpacker.unpackDouble();
-        final double y = messageUnpacker.unpackDouble();
-        messageUnpacker.close();
-
-
-        registerEntity(type, x, y, communicator);
-        return false;
-    }
-
-    void registerEntity(EntityType type, double x, double y, Communicator communicator) {
-        if (type == EntityType.USER_EQUIPMENT) {
-            final Ue ue = new Ue(x, y, communicator);
-            final long eventId = Event.getNextId();
-            final Event trafficIngress = new Event(eventId, t, EventType.TRAFFIC_INGRESS, ue);
-            listUe.put(ue.getId(), ue);
-            listEvent.put(trafficIngress.id(), trafficIngress);
-            ue.sendRegisterAck(ue.getId());
-            log.info("UE [id={}] {}", ue.getId(), communicator);
-        } else if (type == EntityType.BASE_STATION) {
-            final Bs bs = new Bs(x, y, communicator);
-            final long eventId = Event.getNextId();
-            final Event newState = new Event(eventId, t, EventType.NEW_STATE, bs);
-            listBs.put(bs.getId(), bs);
-            listEvent.put(newState.id(), newState);
-            bs.sendRegisterAck(bs.getId());
-            log.info("BS [id={}] {}", bs.getId(), communicator);
-        }
-    }
+  private void registerUe(final Position position, final Communicator communicator) {
+    final Ue ue = new Ue(position, communicator);
+    entities.add(ue);
+    communicator.sendMessage(new RegisterResponseDto(ue.getId()));
+    log.info("UE [id={}] {}", ue.getId(), communicator);
+  }
 }
