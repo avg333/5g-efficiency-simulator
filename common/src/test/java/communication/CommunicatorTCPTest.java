@@ -4,7 +4,6 @@ import communication.model.CloseBrokerDto;
 import communication.model.RegisterRequestDto;
 import communication.model.RegisterResponseDto;
 import communication.model.base.Dto;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -18,7 +17,6 @@ class CommunicatorTCPTest {
   private static final String LOCALHOST = "localhost";
 
   private ServerSocket serverSocket;
-
   private CommunicatorTCP client;
 
   @BeforeEach
@@ -41,10 +39,7 @@ class CommunicatorTCPTest {
   }
 
   @Test
-  void testCommunicatorTCP() throws IOException {
-    // Aqui se crea un CommunicatorTCP con un EntityType, un ip, un puerto y una Position
-    // En ese momento se envia un mensaje de registro al servidor y se recibe un mensaje de
-    // respuesta
+  void testCommunicatorTCP() {
     client = new CommunicatorTCP(LOCALHOST, serverSocket.getLocalPort());
     System.out.println("Testing CommunicatorTCP");
     client.sendMessage(new CloseBrokerDto());
@@ -71,12 +66,7 @@ class CommunicatorTCPTest {
   }
 
   private void closeServerSocket() throws IOException {
-    try (final Socket clientSocket = new Socket(LOCALHOST, serverSocket.getLocalPort());
-        final DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream())) {
-      final byte[] message = new CloseBrokerDto().toByteArray();
-      out.writeInt(message.length);
-      out.write(message);
-    }
+    new CommunicatorTCP(LOCALHOST, serverSocket.getLocalPort()).sendMessage(new CloseBrokerDto());
     serverSocket.close();
     client.close();
   }

@@ -2,7 +2,22 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns="http://maven.apache.org/POM/4.0.0"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
   <artifactId>5g-efficiency-simulator</artifactId>
+  <groupId>org.5gefficiencysimulator</groupId>
+  <modules>
+    <module>broker</module>
+    <module>bs</module>
+    <module>ue</module>
+    <module>common</module>
+  </modules>
+  <packaging>pom</packaging>
+
+  <properties>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -62,21 +77,21 @@
     </dependency>
   </dependencies>
 
-  <groupId>org.5gefficiencysimulator</groupId>
-  <modelVersion>4.0.0</modelVersion>
-  <modules>
-    <module>broker</module>
-    <module>bs</module>
-    <module>ue</module>
-    <module>common</module>
-  </modules>
-  <packaging>pom</packaging>
-
-  <properties>
-    <maven.compiler.source>21</maven.compiler.source>
-    <maven.compiler.target>21</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
-
   <version>2.0</version>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.commsen.maven</groupId>
+        <artifactId>bom-helper-maven-plugin</artifactId>
+        <version>0.5.0</version>
+      </plugin>
+      <plugin>
+        <groupId>org.pitest</groupId>
+        <artifactId>pitest-maven</artifactId>
+        <version>1.15.8</version>
+      </plugin>
+    </plugins>
+  </build>
+
 </project>
