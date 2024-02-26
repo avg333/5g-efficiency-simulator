@@ -136,6 +136,6 @@ public class DtoFactory {
     double y = messageUnpacker.unpackDouble();
     double size = messageUnpacker.unpackDouble();
     double tUntilNextTask = messageUnpacker.unpackDouble();
-    return new TrafficIngressResponseDto(new Position(x, y), size, tUntilNextTask);
+    return new TrafficIngressResponseDto(x, y, size, tUntilNextTask);
   }
 }

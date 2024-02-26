@@ -13,8 +13,8 @@ public enum BsStateType {
   OFF((byte) 2),
   TO_ON((byte) 3),
   TO_OFF((byte) 4),
-  HYSTERESIS((byte) -1),
-  WAITING_TO_ON((byte) -2);
+  HYSTERESIS((byte) 5),
+  WAITING_TO_ON((byte) 6);
 
   private static final Map<Byte, BsStateType> BY_VALUE_MAP =
       Stream.of(values()).collect(Collectors.toMap(BsStateType::getValue, stateType -> stateType));

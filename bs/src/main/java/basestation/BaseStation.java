@@ -32,6 +32,7 @@ public class BaseStation extends BaseEntity {
   private static final int TIME_TO_ENTER_HYSTERESIS = 0;
   private static final int TIME_TO_EXIT_HYSTERESIS = 0;
   private static final int TIME_TO_SUSPEND = 0;
+  private static final BsStateType DEFAULT_NEXT_STATE = BsStateType.OFF;
 
   private static final int MSG_LEN =
       getMaxMsgLen(TRAFFIC_ARRIVAL_REQUEST, TRAFFIC_EGRESS_REQUEST, NEW_STATE_RESPONSE);
@@ -39,9 +40,9 @@ public class BaseStation extends BaseEntity {
   private final BaseStationConfig baseStationConfig;
 
   private final Deque<Task> tasksPending = new ArrayDeque<>();
-  private BsStateType state = BsStateType.OFF;
-  private BsStateType nextState = BsStateType.OFF;
-  private Task currentTask;
+  private BsStateType state = DEFAULT_NEXT_STATE;
+  private BsStateType nextState = DEFAULT_NEXT_STATE;
+  private Task currentTask = null;
   private double lastTaskArrivalTime = 0.0;
 
   public BaseStation(
@@ -111,7 +112,7 @@ public class BaseStation extends BaseEntity {
    */
   protected void processTrafficEgress(final TrafficEgressRequestDto request) {
     final double currentT = request.getT();
-    log.debug("Processed task {}", currentTask);
+    log.debug("Processed task {} at {}", currentTask, currentT);
 
     final long id = currentTask.id();
     final double size = currentTask.size();
@@ -138,7 +139,7 @@ public class BaseStation extends BaseEntity {
    */
   protected void processNewState(final NewStateRequestDto request) {
     final BsStateType stateReceived = request.getState();
-    log.debug("Changed to STATE={}", stateReceived);
+    log.debug("Updated to STATE={}", stateReceived);
 
     final double tNewState = setNewStateAndScheduleNextStateChange(stateReceived);
 
@@ -155,9 +156,8 @@ public class BaseStation extends BaseEntity {
     final boolean bsIsActive = state == BsStateType.ON;
 
     if (isNotProcessingTask && existsTaskToProcess && bsIsActive) {
-      final Task task = tasksPending.removeFirst();
-      this.currentTask = task;
-      return task.size() / this.baseStationConfig.c();
+      currentTask = tasksPending.removeFirst();
+      return currentTask.size() / baseStationConfig.c();
     }
 
     return NO_TASK_TO_PROCESS.getValue();
@@ -169,7 +169,7 @@ public class BaseStation extends BaseEntity {
     final boolean bsIsNotOff = state != BsStateType.OFF;
 
     if (existsTaskToProcess && bsIsOnHysteresis) {
-      this.nextState = BsStateType.ON;
+      nextState = BsStateType.ON;
       return TIME_TO_EXIT_HYSTERESIS;
     } else if (bsIsNotOff) {
       return NO_NEXT_STATE.getValue();
@@ -180,7 +180,7 @@ public class BaseStation extends BaseEntity {
       return NO_NEXT_STATE.getValue();
     }
 
-    this.nextState = candidateNextState.get();
+    nextState = candidateNextState.get();
     return TIME_TO_SUSPEND;
   }
 

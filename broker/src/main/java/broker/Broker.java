@@ -112,7 +112,7 @@ public class Broker implements Runnable {
             ue.communicate(new TrafficIngressRequestDto(), TRAFFIC_INGRESS_RESPONSE.getSize());
 
     final Task task = new Task(taskCounter++, dto.getSize(), t, dto.getTUntilNextTask());
-    final Position position = dto.getPosition();
+    final Position position = new Position(dto.getX(), dto.getY());
 
     eventQueue.add(new Event(t + task.tUntilNextTask(), EventType.TRAFFIC_INGRESS, ue));
 

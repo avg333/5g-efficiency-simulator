@@ -65,7 +65,9 @@ public class UserEquipment extends BaseEntity {
   protected void processTrafficIngress() {
     final Task task = taskGenerator.generateTask();
     position.move(mobilityDist.getRandom(), mobilityDist.getRandom());
-    sendMessage(new TrafficIngressResponseDto(position, task.size(), task.tUntilNextTask()));
+    sendMessage(
+        new TrafficIngressResponseDto(
+            position.getX(), position.getY(), task.size(), task.tUntilNextTask()));
     log.debug("Generated task {} in position {}", task, position);
   }
 }

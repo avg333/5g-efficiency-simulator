@@ -10,8 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import types.EntityType;
 
-@RequiredArgsConstructor
 @Slf4j
+@RequiredArgsConstructor
 public abstract class BaseEntity implements Runnable {
 
   protected final Position position;

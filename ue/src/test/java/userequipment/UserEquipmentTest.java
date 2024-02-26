@@ -15,6 +15,7 @@ import communication.model.CloseEntityDto;
 import communication.model.TrafficEgressRequestDto;
 import communication.model.TrafficIngressRequestDto;
 import communication.model.TrafficIngressResponseDto;
+import communication.model.base.Dto;
 import distribution.Distribution;
 import domain.Position;
 import exception.NotSupportedActionException;
@@ -41,12 +42,11 @@ class UserEquipmentTest {
   @Mock private Communicator communicator;
   private UserEquipment userEquipment;
 
-  private static void verifyTrafficIngressResponseDto(
+  private static void verifyTrafficIngress(
       final TrafficIngressResponseDto response, final int time) {
     assertThat(response).isNotNull();
-    assertThat(response.getPosition()).isNotNull();
-    // assertThat(response.getPosition().getX()).isEqualTo(X_START + time * MOVE_INCREMENT); FIXME
-    // assertThat(response.getPosition().getY()).isEqualTo(Y_START + time * MOVE_INCREMENT); FIXME
+    assertThat(response.getX()).isEqualTo(X_START + time * MOVE_INCREMENT);
+    assertThat(response.getY()).isEqualTo(Y_START + time * MOVE_INCREMENT);
     assertThat(response.getSize()).isEqualTo(TASK_SIZE);
     assertThat(response.getTUntilNextTask()).isEqualTo(TASK_DELAY);
   }
@@ -95,14 +95,13 @@ class UserEquipmentTest {
         .thenReturn(new CloseEntityDto());
     doNothing().when(communicator).close();
 
-    final ArgumentCaptor<TrafficIngressResponseDto> responseCaptor =
-        ArgumentCaptor.forClass(TrafficIngressResponseDto.class);
+    final ArgumentCaptor<Dto> responseCaptor = ArgumentCaptor.forClass(Dto.class);
     doNothing().when(communicator).sendMessage(responseCaptor.capture());
 
     userEquipment.run();
 
     for (int i = 0; i < responseCaptor.getAllValues().size(); i++) {
-      verifyTrafficIngressResponseDto(responseCaptor.getAllValues().get(i), i + 1);
+      verifyTrafficIngress((TrafficIngressResponseDto) responseCaptor.getAllValues().get(i), i + 1);
       verify(communicator).sendMessage(responseCaptor.getAllValues().get(i));
     }
 

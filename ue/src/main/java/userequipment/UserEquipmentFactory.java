@@ -16,30 +16,30 @@ public class UserEquipmentFactory {
   public UserEquipment createUserEquipment() {
     Config config = new Config(PROP_FILE_NAME);
 
-    Position position = new Position(config.getDoubleProperty("x"), config.getDoubleProperty("y"));
+    Position position = new Position(config.getDouble("x"), config.getDouble("y"));
 
     Distribution mobilityDist =
         new Distribution(
             DistributionMode.getDistributionModeByCode(
-                config.getProperty("mobilityDistributionMode").charAt(0)),
-            config.getDoubleProperty("mobilityDistributionParam1"),
-            config.getDoubleProperty("mobilityDistributionParam2"));
+                config.getString("mobilityDistributionMode").charAt(0)),
+            config.getDouble("mobilityDistributionParam1"),
+            config.getDouble("mobilityDistributionParam2"));
 
     Distribution delayDist =
         new Distribution(
             DistributionMode.getDistributionModeByCode(
-                config.getProperty("delayDistributionMode").charAt(0)),
-            config.getDoubleProperty("delayDistributionParam1"),
-            config.getDoubleProperty("delayDistributionParam2"));
+                config.getString("delayDistributionMode").charAt(0)),
+            config.getDouble("delayDistributionParam1"),
+            config.getDouble("delayDistributionParam2"));
 
     Distribution sizeDist =
         new Distribution(
             DistributionMode.getDistributionModeByCode(
-                config.getProperty("sizeDistributionMode").charAt(0)),
-            config.getDoubleProperty("sizeDistributionParam1"),
-            config.getDoubleProperty("sizeDistributionParam2"));
+                config.getString("sizeDistributionMode").charAt(0)),
+            config.getDouble("sizeDistributionParam1"),
+            config.getDouble("sizeDistributionParam2"));
 
-    int seed = config.getIntProperty("seed");
+    int seed = config.getInt("seed");
 
     if (seed != 0) {
       sizeDist.setSeed(seed);
@@ -50,11 +50,11 @@ public class UserEquipmentFactory {
     TaskGenerator taskGenerator = new TaskGenerator(sizeDist, delayDist);
 
     Communicator communicator =
-        config.getBooleanProperty("tcp")
+        config.getBoolean("tcp")
             ? new CommunicatorTCP(
-                config.getProperty("ipBroker"), config.getIntProperty("portBroker"))
+                config.getString("ipBroker"), config.getInt("portBroker"))
             : new CommunicatorUDP(
-                config.getProperty("ipBroker"), config.getIntProperty("portBroker"));
+                config.getString("ipBroker"), config.getInt("portBroker"));
 
     return new UserEquipment(position, communicator, mobilityDist, taskGenerator);
   }
