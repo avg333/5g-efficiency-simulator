@@ -1,6 +1,7 @@
 package communication;
 
 import communication.model.base.Dto;
+import communication.model.factory.DtoFactory;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;

@@ -50,11 +50,11 @@ public class UserEquipment extends BaseEntity {
   }
 
   @Override
-  protected final void processAction(final Dto dto) {
-    switch (dto.getIdentifier()) {
+  protected final Dto processAction(final Dto dto) {
+    return switch (dto.getIdentifier()) {
       case TRAFFIC_INGRESS_REQUEST -> processTrafficIngress();
       default -> processNotSupportedAction(dto);
-    }
+    };
   }
 
   /*
@@ -62,12 +62,12 @@ public class UserEquipment extends BaseEntity {
    * The broker then redirects it to a base station.
    * The method also includes the time when the user equipment will generate the next task.
    */
-  protected void processTrafficIngress() {
+  protected Dto processTrafficIngress() {
     final Task task = taskGenerator.generateTask();
     position.move(mobilityDist.getRandom(), mobilityDist.getRandom());
-    sendMessage(
-        new TrafficIngressResponseDto(
-            position.getX(), position.getY(), task.size(), task.tUntilNextTask()));
     log.debug("Generated task {} in position {}", task, position);
+
+    return new TrafficIngressResponseDto(
+        position.getX(), position.getY(), task.size(), task.tUntilNextTask());
   }
 }

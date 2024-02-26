@@ -5,6 +5,7 @@ import static communication.model.base.DtoIdentifier.REGISTER_RESPONSE;
 import communication.model.RegisterRequestDto;
 import communication.model.RegisterResponseDto;
 import communication.model.base.Dto;
+import communication.model.factory.DtoFactory;
 import domain.Position;
 import exception.MessageProcessingException;
 import java.io.IOException;

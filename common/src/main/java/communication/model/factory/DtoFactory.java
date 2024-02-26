@@ -1,4 +1,4 @@
-package communication;
+package communication.model.factory;
 
 import communication.model.CloseBrokerDto;
 import communication.model.CloseEntityDto;

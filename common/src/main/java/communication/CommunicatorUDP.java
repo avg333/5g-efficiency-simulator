@@ -16,20 +16,36 @@ public class CommunicatorUDP extends Communicator {
   private final InetAddress ad;
 
   public CommunicatorUDP(final DatagramSocket sc, final InetAddress ad, final int portBroker) {
-    this.sc = sc;
-    this.ad = ad;
-    this.portBroker = portBroker;
-  }
-
-  public CommunicatorUDP(final String ipBroker, final int portBroker) {
-    this.portBroker = portBroker;
     try {
-      this.sc = new DatagramSocket();
-      sc.setSoTimeout(TIMEOUT);
-      this.ad = InetAddress.getByName(ipBroker);
+      this.sc = sc;
+      this.sc.setSoTimeout(TIMEOUT);
+      this.ad = ad;
+      this.portBroker = portBroker;
     } catch (IOException e) {
       log.error("Error trying to create the communicator", e);
       this.close();
+      throw new CommunicatorCreationException(e);
+    }
+  }
+
+  public CommunicatorUDP(final String ipBroker, final int portBroker) {
+    this(createSocket(), createAddress(ipBroker), portBroker);
+  }
+
+  private static DatagramSocket createSocket() {
+    try {
+      return new DatagramSocket();
+    } catch (IOException e) {
+      log.error("Error trying to create the socket", e);
+      throw new CommunicatorCreationException(e);
+    }
+  }
+
+  private static InetAddress createAddress(final String ip) {
+    try {
+      return InetAddress.getByName(ip);
+    } catch (IOException e) {
+      log.error("Error trying to create the address", e);
       throw new CommunicatorCreationException(e);
     }
   }
@@ -59,6 +75,6 @@ public class CommunicatorUDP extends Communicator {
 
   @Override
   public String toString() {
-    return "ad=" + ad + ", port=" + portBroker;
+    return "ad=" + ad.getHostAddress() + ", port=" + portBroker;
   }
 }

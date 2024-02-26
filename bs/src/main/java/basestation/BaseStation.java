@@ -68,13 +68,13 @@ public class BaseStation extends BaseEntity {
   }
 
   @Override
-  protected final void processAction(final Dto dto) {
-    switch (dto.getIdentifier()) {
+  protected final Dto processAction(final Dto dto) {
+    return switch (dto.getIdentifier()) {
       case TRAFFIC_ARRIVAL_REQUEST -> processTrafficArrival((TrafficArrivalRequestDto) dto);
       case TRAFFIC_EGRESS_REQUEST -> processTrafficEgress((TrafficEgressRequestDto) dto);
       case NEW_STATE_REQUEST -> processNewState((NewStateRequestDto) dto);
       default -> processNotSupportedAction(dto);
-    }
+    };
   }
 
   /*
@@ -84,7 +84,7 @@ public class BaseStation extends BaseEntity {
    * - When the next task will be processed.
    * - Nothing if the base station has no tasks to process.
    */
-  protected void processTrafficArrival(final TrafficArrivalRequestDto request) {
+  protected Dto processTrafficArrival(final TrafficArrivalRequestDto request) {
     final Task task =
         new Task(request.getTaskId(), request.getTaskSize(), request.getTaskTArrivalTime());
     log.debug("Received task {}", task);
@@ -100,7 +100,7 @@ public class BaseStation extends BaseEntity {
 
     lastTaskArrivalTime = task.tArrivalTime();
 
-    sendMessage(new TrafficArrivalResponseDto(q, state, tTrafficEgress, tNewState, nextState, a));
+    return new TrafficArrivalResponseDto(q, state, tTrafficEgress, tNewState, nextState, a);
   }
 
   /*
@@ -110,7 +110,7 @@ public class BaseStation extends BaseEntity {
    * This only happens if the base station is not processing a task and there are no tasks pending.
    * - When the next task will be processed if there are tasks pending.
    */
-  protected void processTrafficEgress(final TrafficEgressRequestDto request) {
+  protected Dto processTrafficEgress(final TrafficEgressRequestDto request) {
     final double currentT = request.getT();
     log.debug("Processed task {} at {}", currentTask, currentT);
 
@@ -126,8 +126,8 @@ public class BaseStation extends BaseEntity {
 
     final double q = getQ();
 
-    sendMessage(
-        new TrafficEgressResponseDto(q, state, tTrafficEgress, tNewState, nextState, w, id, size));
+    return new TrafficEgressResponseDto(
+        q, state, tTrafficEgress, tNewState, nextState, w, id, size);
   }
 
   /*
@@ -137,7 +137,7 @@ public class BaseStation extends BaseEntity {
    * - When the next task will be processed.
    * - Nothing if the base station has no tasks to process.
    */
-  protected void processNewState(final NewStateRequestDto request) {
+  protected Dto processNewState(final NewStateRequestDto request) {
     final BsStateType stateReceived = request.getState();
     log.debug("Updated to STATE={}", stateReceived);
 
@@ -147,7 +147,7 @@ public class BaseStation extends BaseEntity {
 
     final double q = getQ();
 
-    sendMessage(new NewStateResponseDto(q, stateReceived, tTrafficEgress, tNewState, nextState));
+    return new NewStateResponseDto(q, stateReceived, tTrafficEgress, tNewState, nextState);
   }
 
   private double startProcessingTaskIfPossible() {

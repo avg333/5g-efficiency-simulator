@@ -26,14 +26,14 @@ public abstract class BaseEntity implements Runnable {
 
   protected abstract EntityType getEntityType();
 
-  protected abstract void processAction(Dto dto);
+  protected abstract Dto processAction(Dto dto);
 
   @Override
   public final void run() {
     communicator.register(getEntityType(), position);
 
     while (true) {
-      final Dto dto = receiveAction();
+      final Dto dto = communicator.receiveMessage(getMsgLen());
 
       final DtoIdentifier action = dto.getIdentifier();
       log.debug("Received request for {}", action);
@@ -42,22 +42,14 @@ public abstract class BaseEntity implements Runnable {
         break;
       }
 
-      processAction(dto);
+      communicator.sendMessage(processAction(dto));
     }
 
     communicator.close();
     log.info("Execution completed");
   }
 
-  private Dto receiveAction() {
-    return communicator.receiveMessage(getMsgLen());
-  }
-
-  protected final void sendMessage(final Dto dto) {
-    communicator.sendMessage(dto);
-  }
-
-  protected final void processNotSupportedAction(final Dto dto) {
+  protected final Dto processNotSupportedAction(final Dto dto) {
     log.error("Type {} not supported. Execution completed", dto.getIdentifier());
     communicator.close();
     throw new NotSupportedActionException(dto);

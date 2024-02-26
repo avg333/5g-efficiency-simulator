@@ -20,8 +20,7 @@ public enum DtoIdentifier {
   TRAFFIC_EGRESS_RESPONSE((byte) 8, 34),
   TRAFFIC_EGRESS_REQUEST((byte) 9, 9),
   NEW_STATE_RESPONSE((byte) 10, 19),
-  NEW_STATE_REQUEST((byte) 11, 2),
-  ;
+  NEW_STATE_REQUEST((byte) 11, 2);
 
   private static final Map<Byte, DtoIdentifier> BY_CODE_MAP =
       Stream.of(values())
@@ -32,7 +31,7 @@ public enum DtoIdentifier {
   public static DtoIdentifier getDtoIdentifierByCode(final byte code) {
     final DtoIdentifier result = BY_CODE_MAP.get(code);
     if (result == null) {
-      throw new IllegalArgumentException("Unknown dto identifier");
+      throw new IllegalArgumentException("Unknown dto identifier code: " + code);
     }
     return result;
   }

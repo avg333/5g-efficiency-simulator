@@ -4,6 +4,7 @@ import broker.EventType;
 import domain.Task;
 import entities.Bs;
 import entities.Ue;
+import exception.CsvWriterException;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -11,13 +12,13 @@ import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import types.BsStateType;
 import types.EntityType;
 
+@Slf4j
 public class LoggerCustom {
 
   private static final int ADVANCE = 1;
@@ -25,24 +26,31 @@ public class LoggerCustom {
     "T", "ENTITY", "ID", "EVENT", "TASK", "L", "A", "X", "Y", "FROM-UE", "TO-BS", "Q", "W", "STATE"
   };
 
-  private final Logger log = LoggerFactory.getLogger(getClass());
   private final boolean printCsv;
-  private final SimpleDateFormat formatter;
+  private final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
   private int aux = ADVANCE;
   private FileWriter out;
   private CSVPrinter printer;
 
   public LoggerCustom(boolean printCsv) {
-    formatter = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
     this.printCsv = printCsv;
     if (printCsv) {
-      try {
-        out = new FileWriter("events_" + formatter.format(new Date()) + ".csv");
-        printer = new CSVPrinter(out, CSVFormat.DEFAULT.withHeader(COLUMNS));
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+      initializeCsvWriter();
     }
+  }
+
+  private void initializeCsvWriter() {
+    try {
+      out = new FileWriter(obtainFileName());
+      printer = new CSVPrinter(out, CSVFormat.DEFAULT.builder().setHeader(COLUMNS).build());
+    } catch (IOException e) {
+      log.error("Failed to initialize CSV writer", e);
+      throw new CsvWriterException("Failed to initialize CSV writer", e);
+    }
+  }
+
+  private String obtainFileName() {
+    return "events_" + formatter.format(new Date()) + ".csv";
   }
 
   public void printProgress(double current, double total) {
@@ -78,6 +86,19 @@ public class LoggerCustom {
     log.info("End of simulation. Execution time: {}s", elapsedTime / 1000);
     printResume(elapsedTime, t, bsList, ueList);
     close();
+  }
+
+  private void close() {
+    try {
+      if (out != null) {
+        out.close();
+      }
+      if (printer != null) {
+        printer.close();
+      }
+    } catch (IOException e) {
+      log.error("Failed to close CSV writer", e);
+    }
   }
 
   private void printResume(long elapsedTime, double t, List<Bs> bsList, List<Ue> ueList) {
@@ -123,19 +144,6 @@ public class LoggerCustom {
       }
     } catch (IOException e) {
       log.error("Failed to print resume.txt file.", e);
-    }
-  }
-
-  private void close() {
-    try {
-      if (out != null) {
-        out.close();
-      }
-      if (printer != null) {
-        printer.close();
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
     }
   }
 
@@ -200,7 +208,8 @@ public class LoggerCustom {
             null,
             null);
       } catch (IOException e) {
-        e.printStackTrace();
+        log.error("Failed to log traffic route", e);
+        throw new CsvWriterException("Failed to log traffic route", e);
       }
     }
   }
@@ -232,7 +241,8 @@ public class LoggerCustom {
             null,
             null);
       } catch (IOException e) {
-        e.printStackTrace();
+        log.error("Failed to log traffic arrival", e);
+        throw new CsvWriterException("Failed to log traffic arrival", e);
       }
     }
   }
@@ -258,7 +268,8 @@ public class LoggerCustom {
             wait,
             null);
       } catch (IOException e) {
-        e.printStackTrace();
+        log.error("Failed to log traffic egress", e);
+        throw new CsvWriterException("Failed to log traffic egress", e);
       }
     }
   }
@@ -283,7 +294,8 @@ public class LoggerCustom {
             null,
             stateBs);
       } catch (IOException e) {
-        e.printStackTrace();
+        log.error("Failed to log new state", e);
+        throw new CsvWriterException("Failed to log new state", e);
       }
     }
   }

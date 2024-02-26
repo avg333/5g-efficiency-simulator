@@ -142,7 +142,7 @@ class BaseStationTest {
 
   @BeforeEach
   void setUp() {
-    this.baseStation =
+    baseStation =
         new BaseStation(Instancio.create(Position.class), communicator, BASE_STATION_CONFIG);
   }
 

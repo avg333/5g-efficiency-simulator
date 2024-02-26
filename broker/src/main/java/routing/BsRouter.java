@@ -24,11 +24,8 @@ public record BsRouter(RoutingAlgorithmMode mode) {
   }
 
   public Bs getBs(final Ue ue, final List<Bs> bsList) {
-    switch (mode) {
-      case DISTANCE_VECTOR -> {
-        return distanceVector(ue, bsList);
-      }
-      default -> throw new IllegalArgumentException("Invalid mode: " + mode);
-    }
+    return switch (mode) {
+      case DISTANCE_VECTOR -> distanceVector(ue, bsList);
+    };
   }
 }
