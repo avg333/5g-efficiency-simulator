@@ -13,15 +13,6 @@ public class CommunicatorTCP extends Communicator {
   private final DataOutputStream out;
   private final DataInputStream in;
 
-  private static Socket createSocket(final String ip, final int port) {
-    try {
-      return new Socket(ip, port);
-    } catch (IOException e) {
-      log.error("Error trying to create the socket", e);
-      throw new CommunicatorCreationException(e);
-    }
-  }
-
   public CommunicatorTCP(final Socket clientSocket) {
     try {
       this.clientSocket = clientSocket;
@@ -36,6 +27,15 @@ public class CommunicatorTCP extends Communicator {
 
   public CommunicatorTCP(final String ip, final int port) {
     this(createSocket(ip, port));
+  }
+
+  private static Socket createSocket(final String ip, final int port) {
+    try {
+      return new Socket(ip, port);
+    } catch (IOException e) {
+      log.error("Error trying to create the socket", e);
+      throw new CommunicatorCreationException(e);
+    }
   }
 
   @Override

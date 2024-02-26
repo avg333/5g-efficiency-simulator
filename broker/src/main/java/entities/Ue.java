@@ -1,8 +1,8 @@
 package entities;
 
 import communication.Communicator;
-import domain.Task;
 import domain.Position;
+import domain.Task;
 
 public class Ue extends Entity {
 
@@ -17,7 +17,7 @@ public class Ue extends Entity {
   public void addTask(Position position, Task task) {
     this.setPosition(position);
     eL += task.size();
-    eA += task.tArrivalTime();
+    eA += task.tUntilNextTask();
     taskCounter++;
   }
 

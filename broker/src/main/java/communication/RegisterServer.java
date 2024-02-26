@@ -29,6 +29,12 @@ public abstract class RegisterServer {
   protected final int port;
   private final List<Entity> entities = new ArrayList<>();
 
+  private static void waitForEnter() {
+    try (final Scanner in = new Scanner(System.in)) {
+      in.nextLine();
+    }
+  }
+
   public List<Entity> getEntities() {
     log.info("Registered entities:");
     new Thread(this::runServer).start();
@@ -40,12 +46,6 @@ public abstract class RegisterServer {
   public void closeSockets() {
     entities.stream().parallel().forEach(Entity::closeSocket);
     close();
-  }
-
-  private static void waitForEnter() {
-    try (final Scanner in = new Scanner(System.in)) {
-      in.nextLine();
-    }
   }
 
   private void closeRegisterServer(final Dto dto) {

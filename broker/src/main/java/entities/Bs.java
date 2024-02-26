@@ -1,9 +1,9 @@
 package entities;
 
 import communication.Communicator;
+import domain.Position;
 import lombok.Getter;
 import lombok.Setter;
-import domain.Position;
 import types.BsStateType;
 
 public class Bs extends Entity {

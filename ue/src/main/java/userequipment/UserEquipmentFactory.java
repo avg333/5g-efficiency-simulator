@@ -42,9 +42,9 @@ public class UserEquipmentFactory {
     int seed = config.getIntProperty("seed");
 
     if (seed != 0) {
-      mobilityDist.setSeed(seed);
-      delayDist.setSeed(seed);
       sizeDist.setSeed(seed);
+      delayDist.setSeed(seed + 1L);
+      mobilityDist.setSeed(seed + 2L);
     }
 
     TaskGenerator taskGenerator = new TaskGenerator(sizeDist, delayDist);

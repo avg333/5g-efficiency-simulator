@@ -2,10 +2,10 @@ package communication.model;
 
 import communication.model.base.Dto;
 import communication.model.base.DtoIdentifier;
+import domain.Position;
 import java.io.IOException;
 import lombok.Getter;
 import org.msgpack.core.MessageBufferPacker;
-import domain.Position;
 import types.EntityType;
 
 @Getter

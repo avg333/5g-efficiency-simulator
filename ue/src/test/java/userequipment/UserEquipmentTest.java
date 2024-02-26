@@ -41,6 +41,16 @@ class UserEquipmentTest {
   @Mock private Communicator communicator;
   private UserEquipment userEquipment;
 
+  private static void verifyTrafficIngressResponseDto(
+      final TrafficIngressResponseDto response, final int time) {
+    assertThat(response).isNotNull();
+    assertThat(response.getPosition()).isNotNull();
+    // assertThat(response.getPosition().getX()).isEqualTo(X_START + time * MOVE_INCREMENT); FIXME
+    // assertThat(response.getPosition().getY()).isEqualTo(Y_START + time * MOVE_INCREMENT); FIXME
+    assertThat(response.getSize()).isEqualTo(TASK_SIZE);
+    assertThat(response.getTUntilNextTask()).isEqualTo(TASK_DELAY);
+  }
+
   @BeforeEach
   void setUp() {
     final Distribution mobilityDist = new Distribution(DETERMINISTIC, MOVE_INCREMENT, 0);
@@ -98,15 +108,5 @@ class UserEquipmentTest {
 
     verify(communicator, times(responseCaptor.getAllValues().size() + 1)).receiveMessage(MSG_LEN);
     verify(communicator).close();
-  }
-
-  private static void verifyTrafficIngressResponseDto(
-      final TrafficIngressResponseDto response, final int time) {
-    assertThat(response).isNotNull();
-    assertThat(response.getPosition()).isNotNull();
-    // assertThat(response.getPosition().getX()).isEqualTo(X_START + time * MOVE_INCREMENT); FIXME
-    // assertThat(response.getPosition().getY()).isEqualTo(Y_START + time * MOVE_INCREMENT); FIXME
-    assertThat(response.getSize()).isEqualTo(TASK_SIZE);
-    assertThat(response.getTUntilNextTask()).isEqualTo(TASK_DELAY);
   }
 }

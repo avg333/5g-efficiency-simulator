@@ -1,7 +1,6 @@
 package broker;
 
-import java.io.InputStream;
-import java.util.Properties;
+import config.Config;
 import routing.BsRouter;
 import routing.RoutingAlgorithmMode;
 
@@ -9,23 +8,16 @@ public class BrokerFactory {
   private static final String PROP_FILE_NAME = "config.properties";
 
   public Broker createBroker() {
-    final Properties prop = new Properties();
+    final Config config = new Config(PROP_FILE_NAME);
 
-    try (final InputStream inputStream =
-        getClass().getClassLoader().getResourceAsStream(PROP_FILE_NAME)) {
-      prop.load(inputStream);
-    } catch (Exception e) {
-      throw new RuntimeException("Error loading the properties.", e);
-    }
-
-    final int port = Integer.parseInt(prop.getProperty("port"));
-    final boolean communicatorModeTCP = Boolean.parseBoolean(prop.getProperty("tcp"));
-    final boolean eventsLog = Boolean.parseBoolean(prop.getProperty("eventsLog"));
-    final char routingAlgorithmModeChar = prop.getProperty("routingAlgorithmMode").charAt(0);
+    final int port = Integer.parseInt(config.getProperty("port"));
+    final boolean communicatorModeTCP = Boolean.parseBoolean(config.getProperty("tcp"));
+    final boolean eventsLog = Boolean.parseBoolean(config.getProperty("eventsLog"));
     final RoutingAlgorithmMode routingAlgorithmMode =
-        RoutingAlgorithmMode.getRoutingAlgorithmModeTypeByCode(routingAlgorithmModeChar);
-    final double tFinal = Double.parseDouble(prop.getProperty("tFinal"));
+        RoutingAlgorithmMode.getRoutingAlgorithmModeTypeByCode(
+            config.getProperty("routingAlgorithmMode").charAt(0));
     final BsRouter bsRouter = new BsRouter(routingAlgorithmMode);
+    final double tFinal = Double.parseDouble(config.getProperty("tFinal"));
 
     return new Broker(port, communicatorModeTCP, eventsLog, bsRouter, tFinal);
   }

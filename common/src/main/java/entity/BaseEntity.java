@@ -18,15 +18,15 @@ public abstract class BaseEntity implements Runnable {
 
   private final Communicator communicator;
 
+  protected static int getMaxMsgLen(final DtoIdentifier... actions) {
+    return Stream.of(actions).mapToInt(DtoIdentifier::getSize).max().orElse(0);
+  }
+
   protected abstract int getMsgLen();
 
   protected abstract EntityType getEntityType();
 
   protected abstract void processAction(Dto dto);
-
-  protected static int getMaxMsgLen(final DtoIdentifier... actions) {
-    return Stream.of(actions).mapToInt(DtoIdentifier::getSize).max().orElse(0);
-  }
 
   @Override
   public final void run() {

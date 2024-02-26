@@ -1,5 +1,6 @@
 package loggers;
 
+import broker.EventType;
 import domain.Task;
 import entities.Bs;
 import entities.Ue;
@@ -16,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import types.BsStateType;
 import types.EntityType;
-import broker.EventType;
 
 public class LoggerCustom {
 
@@ -74,15 +74,13 @@ public class LoggerCustom {
     System.out.print(string);
   }
 
-  public void printResults(
-      long elapsedTime, double t, List<Bs> bsList, List<Ue> ueList) {
+  public void printResults(long elapsedTime, double t, List<Bs> bsList, List<Ue> ueList) {
     log.info("End of simulation. Execution time: {}s", elapsedTime / 1000);
     printResume(elapsedTime, t, bsList, ueList);
     close();
   }
 
-  private void printResume(
-      long elapsedTime, double t, List<Bs> bsList, List<Ue> ueList) {
+  private void printResume(long elapsedTime, double t, List<Bs> bsList, List<Ue> ueList) {
     double eQ = 0;
     double eW = 0;
     double eL = 0;
@@ -116,24 +114,12 @@ public class LoggerCustom {
       writer.write(resume);
       for (Bs bs : bsList) {
         writer.write(
-            "\tBS ID: "
-                + bs.getId()
-                + " E[Q]: "
-                + bs.getEq()
-                + " E[W]: "
-                + bs.getEw()
-                + ".\n");
+            "\tBS ID: " + bs.getId() + " E[Q]: " + bs.getEq() + " E[W]: " + bs.getEw() + ".\n");
       }
       writer.write("m: " + ueList.size() + ". E[L] Global: " + eL + ". E[A] Global: " + eA + ".\n");
       for (Ue ue : ueList) {
         writer.write(
-            "\tUE ID: "
-                + ue.getId()
-                + " E[L]: "
-                + ue.geteL()
-                + " E[A]: "
-                + ue.geteA()
-                + ".\n");
+            "\tUE ID: " + ue.getId() + " E[L]: " + ue.geteL() + " E[A]: " + ue.geteA() + ".\n");
       }
     } catch (IOException e) {
       log.error("Failed to print resume.txt file.", e);
@@ -162,7 +148,7 @@ public class LoggerCustom {
         EventType.TRAFFIC_INGRESS,
         task.id(),
         task.size(),
-        task.tArrivalTime(),
+        task.tUntilNextTask(),
         ue.getPosition().getX(),
         ue.getPosition().getY());
     if (printCsv) {
@@ -174,7 +160,7 @@ public class LoggerCustom {
             EventType.TRAFFIC_INGRESS,
             task.id(),
             task.size(),
-            task.tArrivalTime(),
+            task.tUntilNextTask(),
             ue.getPosition().getX(),
             ue.getPosition().getY(),
             null,

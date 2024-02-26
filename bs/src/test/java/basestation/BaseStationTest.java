@@ -50,90 +50,6 @@ class BaseStationTest {
 
   private BaseStation baseStation;
 
-  @Test
-  void shouldReturnMsgLen() {
-    this.baseStation =
-        new BaseStation(
-            Instancio.create(Position.class),
-            communicator,
-            Instancio.create(BaseStationConfig.class));
-    assertThat(baseStation.getMsgLen()).isEqualTo(MSG_LEN);
-  }
-
-  @Test
-  void shouldReturnEntityType() {
-    this.baseStation =
-        new BaseStation(
-            Instancio.create(Position.class),
-            communicator,
-            Instancio.create(BaseStationConfig.class));
-    assertThat(baseStation.getEntityType()).isEqualTo(BASE_STATION);
-  }
-
-  @Test
-  void shouldThrowNotSupportedActionExceptionWhenUserEquipmentProcessReceivesAction() {
-    this.baseStation =
-        new BaseStation(
-            Instancio.create(Position.class),
-            communicator,
-            Instancio.create(BaseStationConfig.class));
-    final TrafficIngressRequestDto invalidRequest = new TrafficIngressRequestDto();
-    when(communicator.receiveMessage(MSG_LEN)).thenReturn(invalidRequest);
-    doNothing().when(communicator).close();
-
-    assertThatThrownBy(() -> baseStation.run())
-        .isInstanceOf(NotSupportedActionException.class)
-        .hasMessageContaining("Action not supported: " + invalidRequest.getIdentifier());
-
-    verify(communicator).receiveMessage(MSG_LEN);
-    verify(communicator).close();
-  }
-
-  @Test
-  void shouldProcessActions() {
-    this.baseStation =
-        new BaseStation(Instancio.create(Position.class), communicator, BASE_STATION_CONFIG);
-
-    when(communicator.receiveMessage(MSG_LEN))
-        .thenReturn(new TrafficArrivalRequestDto(new Task(0, 2, 0, 0))) // 0
-        .thenReturn(new NewStateRequestDto(TO_ON)) // 0
-        .thenReturn(new NewStateRequestDto(ON)) // 0
-        .thenReturn(new TrafficArrivalRequestDto(new Task(1, 3, 1, 0))) // 1
-        .thenReturn(new TrafficEgressRequestDto(2.0)) // 2
-        .thenReturn(new TrafficEgressRequestDto(5.0)) // 5
-        .thenReturn(new NewStateRequestDto(HYSTERESIS)) // 5
-        .thenReturn(new NewStateRequestDto(TO_OFF)) // 5
-        .thenReturn(new NewStateRequestDto(OFF)) // 5
-        .thenReturn(new CloseEntityDto());
-    doNothing().when(communicator).close();
-
-    final ArgumentCaptor<Dto> responseCaptor = ArgumentCaptor.forClass(Dto.class);
-    doNothing().when(communicator).sendMessage(responseCaptor.capture());
-
-    baseStation.run();
-
-    verifyFirstTrafficArrivalResponseDto(
-        (TrafficArrivalResponseDto) responseCaptor.getAllValues().get(0));
-    verifyFirstNewStateResponseDto((NewStateResponseDto) responseCaptor.getAllValues().get(1));
-    verifySecondNewStateResponseDto((NewStateResponseDto) responseCaptor.getAllValues().get(2));
-    verifySecondTrafficArrivalResponseDto(
-        (TrafficArrivalResponseDto) responseCaptor.getAllValues().get(3));
-    verifyFirstTrafficEgressResponseDto(
-        (TrafficEgressResponseDto) responseCaptor.getAllValues().get(4));
-    verifySecondTrafficEgressResponseDto(
-        (TrafficEgressResponseDto) responseCaptor.getAllValues().get(5));
-    verifyThirdNewStateResponseDto((NewStateResponseDto) responseCaptor.getAllValues().get(6));
-    verifyFourthNewStateResponseDto((NewStateResponseDto) responseCaptor.getAllValues().get(7));
-    verifyFifthNewStateResponseDto((NewStateResponseDto) responseCaptor.getAllValues().get(8));
-
-    for (int i = 0; i < responseCaptor.getAllValues().size(); i++) {
-      verify(communicator).sendMessage(responseCaptor.getAllValues().get(i));
-    }
-
-    verify(communicator, times(responseCaptor.getAllValues().size() + 1)).receiveMessage(MSG_LEN);
-    verify(communicator).close();
-  }
-
   private static void verifyFirstTrafficArrivalResponseDto(
       final TrafficArrivalResponseDto response) {
     assertThat(response).isNotNull();
@@ -224,5 +140,89 @@ class BaseStationTest {
     assertThat(response.getTTrafficEgress()).isEqualTo(NO_TASK_TO_PROCESS.getValue());
     assertThat(response.getTNewState()).isEqualTo(NO_NEXT_STATE.getValue());
     assertThat(response.getNextState()).isEqualTo(OFF);
+  }
+
+  @Test
+  void shouldReturnMsgLen() {
+    this.baseStation =
+        new BaseStation(
+            Instancio.create(Position.class),
+            communicator,
+            Instancio.create(BaseStationConfig.class));
+    assertThat(baseStation.getMsgLen()).isEqualTo(MSG_LEN);
+  }
+
+  @Test
+  void shouldReturnEntityType() {
+    this.baseStation =
+        new BaseStation(
+            Instancio.create(Position.class),
+            communicator,
+            Instancio.create(BaseStationConfig.class));
+    assertThat(baseStation.getEntityType()).isEqualTo(BASE_STATION);
+  }
+
+  @Test
+  void shouldThrowNotSupportedActionExceptionWhenUserEquipmentProcessReceivesAction() {
+    this.baseStation =
+        new BaseStation(
+            Instancio.create(Position.class),
+            communicator,
+            Instancio.create(BaseStationConfig.class));
+    final TrafficIngressRequestDto invalidRequest = new TrafficIngressRequestDto();
+    when(communicator.receiveMessage(MSG_LEN)).thenReturn(invalidRequest);
+    doNothing().when(communicator).close();
+
+    assertThatThrownBy(() -> baseStation.run())
+        .isInstanceOf(NotSupportedActionException.class)
+        .hasMessageContaining("Action not supported: " + invalidRequest.getIdentifier());
+
+    verify(communicator).receiveMessage(MSG_LEN);
+    verify(communicator).close();
+  }
+
+  @Test
+  void shouldProcessActions() {
+    this.baseStation =
+        new BaseStation(Instancio.create(Position.class), communicator, BASE_STATION_CONFIG);
+
+    when(communicator.receiveMessage(MSG_LEN))
+        .thenReturn(new TrafficArrivalRequestDto(new Task(0, 2, 0, 0))) // 0
+        .thenReturn(new NewStateRequestDto(TO_ON)) // 0
+        .thenReturn(new NewStateRequestDto(ON)) // 0
+        .thenReturn(new TrafficArrivalRequestDto(new Task(1, 3, 1, 0))) // 1
+        .thenReturn(new TrafficEgressRequestDto(2.0)) // 2
+        .thenReturn(new TrafficEgressRequestDto(5.0)) // 5
+        .thenReturn(new NewStateRequestDto(HYSTERESIS)) // 5
+        .thenReturn(new NewStateRequestDto(TO_OFF)) // 5
+        .thenReturn(new NewStateRequestDto(OFF)) // 5
+        .thenReturn(new CloseEntityDto());
+    doNothing().when(communicator).close();
+
+    final ArgumentCaptor<Dto> responseCaptor = ArgumentCaptor.forClass(Dto.class);
+    doNothing().when(communicator).sendMessage(responseCaptor.capture());
+
+    baseStation.run();
+
+    verifyFirstTrafficArrivalResponseDto(
+        (TrafficArrivalResponseDto) responseCaptor.getAllValues().get(0));
+    verifyFirstNewStateResponseDto((NewStateResponseDto) responseCaptor.getAllValues().get(1));
+    verifySecondNewStateResponseDto((NewStateResponseDto) responseCaptor.getAllValues().get(2));
+    verifySecondTrafficArrivalResponseDto(
+        (TrafficArrivalResponseDto) responseCaptor.getAllValues().get(3));
+    verifyFirstTrafficEgressResponseDto(
+        (TrafficEgressResponseDto) responseCaptor.getAllValues().get(4));
+    verifySecondTrafficEgressResponseDto(
+        (TrafficEgressResponseDto) responseCaptor.getAllValues().get(5));
+    verifyThirdNewStateResponseDto((NewStateResponseDto) responseCaptor.getAllValues().get(6));
+    verifyFourthNewStateResponseDto((NewStateResponseDto) responseCaptor.getAllValues().get(7));
+    verifyFifthNewStateResponseDto((NewStateResponseDto) responseCaptor.getAllValues().get(8));
+
+    for (int i = 0; i < responseCaptor.getAllValues().size(); i++) {
+      verify(communicator).sendMessage(responseCaptor.getAllValues().get(i));
+    }
+
+    verify(communicator, times(responseCaptor.getAllValues().size() + 1)).receiveMessage(MSG_LEN);
+    verify(communicator).close();
   }
 }

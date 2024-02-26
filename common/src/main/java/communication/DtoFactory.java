@@ -63,12 +63,10 @@ public class DtoFactory {
   private NewStateResponseDto createNewStateResponseDto(final MessageUnpacker messageUnpacker)
       throws IOException {
     final double q = messageUnpacker.unpackDouble();
-    final byte stateReceivedValue = messageUnpacker.unpackByte();
-    final BsStateType stateReceived = BsStateType.getStateTypeByCode(stateReceivedValue);
+    final BsStateType stateReceived = BsStateType.getStateTypeByCode(messageUnpacker.unpackByte());
     final double tTrafficEgress = messageUnpacker.unpackDouble();
     final double tNewState = messageUnpacker.unpackDouble();
-    final byte nextStateValue = messageUnpacker.unpackByte();
-    final BsStateType nextState = BsStateType.getStateTypeByCode(nextStateValue);
+    final BsStateType nextState = BsStateType.getStateTypeByCode(messageUnpacker.unpackByte());
     return new NewStateResponseDto(q, stateReceived, tTrafficEgress, tNewState, nextState);
   }
 
@@ -99,12 +97,10 @@ public class DtoFactory {
   private TrafficArrivalResponseDto createTrafficArrivalResponseDto(
       final MessageUnpacker messageUnpacker) throws IOException {
     final double q = messageUnpacker.unpackDouble();
-    final byte stateValue = messageUnpacker.unpackByte();
-    final BsStateType state = BsStateType.getStateTypeByCode(stateValue);
+    final BsStateType state = BsStateType.getStateTypeByCode(messageUnpacker.unpackByte());
     final double tTrafficEgress = messageUnpacker.unpackDouble();
     final double tNewState = messageUnpacker.unpackDouble();
-    final byte nextStateValue = messageUnpacker.unpackByte();
-    final BsStateType nextState = BsStateType.getStateTypeByCode(nextStateValue);
+    final BsStateType nextState = BsStateType.getStateTypeByCode(messageUnpacker.unpackByte());
     final double a = messageUnpacker.unpackDouble();
     return new TrafficArrivalResponseDto(q, state, tTrafficEgress, tNewState, nextState, a);
   }
@@ -118,12 +114,10 @@ public class DtoFactory {
   private TrafficEgressResponseDto createTrafficEgressResponseDto(
       final MessageUnpacker messageUnpacker) throws IOException {
     final double q = messageUnpacker.unpackDouble();
-    final byte stateValue = messageUnpacker.unpackByte();
-    final BsStateType state = BsStateType.getStateTypeByCode(stateValue);
+    final BsStateType state = BsStateType.getStateTypeByCode(messageUnpacker.unpackByte());
     final double tTrafficEgress = messageUnpacker.unpackDouble();
     final double tNewState = messageUnpacker.unpackDouble();
-    final byte nextStateValue = messageUnpacker.unpackByte();
-    final BsStateType nextState = BsStateType.getStateTypeByCode(nextStateValue);
+    final BsStateType nextState = BsStateType.getStateTypeByCode(messageUnpacker.unpackByte());
     final double w = messageUnpacker.unpackDouble();
     final long id = messageUnpacker.unpackLong();
     final double size = messageUnpacker.unpackDouble();
@@ -141,7 +135,7 @@ public class DtoFactory {
     double x = messageUnpacker.unpackDouble();
     double y = messageUnpacker.unpackDouble();
     double size = messageUnpacker.unpackDouble();
-    double delay = messageUnpacker.unpackDouble();
-    return new TrafficIngressResponseDto(new Position(x, y), size, delay);
+    double tUntilNextTask = messageUnpacker.unpackDouble();
+    return new TrafficIngressResponseDto(new Position(x, y), size, tUntilNextTask);
   }
 }

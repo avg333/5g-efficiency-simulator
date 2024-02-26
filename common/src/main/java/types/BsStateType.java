@@ -16,10 +16,9 @@ public enum BsStateType {
   HYSTERESIS((byte) -1),
   WAITING_TO_ON((byte) -2);
 
-  private final byte value;
-
   private static final Map<Byte, BsStateType> BY_VALUE_MAP =
       Stream.of(values()).collect(Collectors.toMap(BsStateType::getValue, stateType -> stateType));
+  private final byte value;
 
   public static BsStateType getStateTypeByCode(final byte code) {
     final BsStateType result = BY_VALUE_MAP.get(code);

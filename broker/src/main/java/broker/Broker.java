@@ -33,12 +33,11 @@ public class Broker implements Runnable {
   private final RegisterServer server;
   private final BsRouter bsRouter;
   private final double tFinal;
-
-  private List<Bs> bsList;
-  private List<Ue> ueList;
   private final PriorityQueue<Event> eventQueue =
       new PriorityQueue<>(Comparator.comparing(Event::getT));
   private final LoggerCustom loggerCustom;
+  private List<Bs> bsList;
+  private List<Ue> ueList;
   private double t = 0;
   private long taskCounter = 0;
 

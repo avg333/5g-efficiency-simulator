@@ -23,12 +23,11 @@ public enum DtoIdentifier {
   NEW_STATE_REQUEST((byte) 11, 2),
   ;
 
-  private final byte code;
-  private final int size;
-
   private static final Map<Byte, DtoIdentifier> BY_CODE_MAP =
       Stream.of(values())
           .collect(Collectors.toMap(DtoIdentifier::getCode, identifier -> identifier));
+  private final byte code;
+  private final int size;
 
   public static DtoIdentifier getDtoIdentifierByCode(final byte code) {
     final DtoIdentifier result = BY_CODE_MAP.get(code);

@@ -166,14 +166,12 @@ public class BaseStation extends BaseEntity {
   private double decideActivationAndScheduleIfPossible() {
     final boolean existsTaskToProcess = !tasksPending.isEmpty();
     final boolean bsIsOnHysteresis = state == BsStateType.HYSTERESIS;
+    final boolean bsIsNotOff = state != BsStateType.OFF;
 
     if (existsTaskToProcess && bsIsOnHysteresis) {
       this.nextState = BsStateType.ON;
       return TIME_TO_EXIT_HYSTERESIS;
-    }
-
-    final boolean bsIsNotOff = state != BsStateType.OFF;
-    if (bsIsNotOff) {
+    } else if (bsIsNotOff) {
       return NO_NEXT_STATE.getValue();
     }
 

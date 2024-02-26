@@ -13,10 +13,9 @@ import types.EntityType;
 
 @Slf4j
 public abstract class Communicator {
-  private static final int REGISTER_RESPONSE_SIZE = REGISTER_RESPONSE.getSize();
-
-  private final DtoFactory dtoFactory = new DtoFactory();
   protected static final int TIMEOUT = 0;
+  private static final int REGISTER_RESPONSE_SIZE = REGISTER_RESPONSE.getSize();
+  private final DtoFactory dtoFactory = new DtoFactory();
 
   public final void register(final EntityType type, final Position position) {
     log.debug("Trying to register the {}", type);
