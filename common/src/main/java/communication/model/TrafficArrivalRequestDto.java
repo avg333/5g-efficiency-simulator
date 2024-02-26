@@ -2,7 +2,6 @@ package communication.model;
 
 import communication.model.base.Dto;
 import communication.model.base.DtoIdentifier;
-import domain.Task;
 import java.io.IOException;
 import lombok.Getter;
 import org.msgpack.core.MessageBufferPacker;
@@ -14,11 +13,11 @@ public class TrafficArrivalRequestDto extends Dto {
   private final double taskSize;
   private final double taskTArrivalTime;
 
-  public TrafficArrivalRequestDto(Task task) {
+  public TrafficArrivalRequestDto(long taskId, double taskSize, double taskTArrivalTime) {
     super(DtoIdentifier.TRAFFIC_ARRIVAL_REQUEST);
-    this.taskId = task.id();
-    this.taskSize = task.size();
-    this.taskTArrivalTime = task.tArrivalTime();
+    this.taskId = taskId;
+    this.taskSize = taskSize;
+    this.taskTArrivalTime = taskTArrivalTime;
   }
 
   @Override

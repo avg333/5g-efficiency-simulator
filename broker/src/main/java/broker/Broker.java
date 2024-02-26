@@ -152,7 +152,9 @@ public class Broker implements Runnable {
   private void processTrafficArrive(final Task task, final Bs bs) {
     final TrafficArrivalResponseDto responseTA =
         (TrafficArrivalResponseDto)
-            bs.communicate(new TrafficArrivalRequestDto(task), TRAFFIC_ARRIVAL_RESPONSE.getSize());
+            bs.communicate(
+                new TrafficArrivalRequestDto(task.id(), task.size(), task.tArrivalTime()),
+                TRAFFIC_ARRIVAL_RESPONSE.getSize());
 
     final double q = responseTA.getQ();
     final BsStateType state = responseTA.getState();

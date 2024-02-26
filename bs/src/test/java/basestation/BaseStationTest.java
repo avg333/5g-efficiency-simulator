@@ -28,7 +28,6 @@ import communication.model.TrafficEgressResponseDto;
 import communication.model.TrafficIngressRequestDto;
 import communication.model.base.Dto;
 import domain.Position;
-import domain.Task;
 import exception.NotSupportedActionException;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
@@ -173,10 +172,10 @@ class BaseStationTest {
   @Test
   void shouldProcessActions() {
     when(communicator.receiveMessage(MSG_LEN))
-        .thenReturn(new TrafficArrivalRequestDto(new Task(0, 2, 0, 0))) // t=0
+        .thenReturn(new TrafficArrivalRequestDto(0, 2, 0)) // t=0
         .thenReturn(new NewStateRequestDto(TO_ON)) // t=0
         .thenReturn(new NewStateRequestDto(ON)) // t=0
-        .thenReturn(new TrafficArrivalRequestDto(new Task(1, 3, 1, 0))) // t=1
+        .thenReturn(new TrafficArrivalRequestDto(1, 3, 1)) // t=1
         .thenReturn(new TrafficEgressRequestDto(2.0)) // t=2
         .thenReturn(new TrafficEgressRequestDto(5.0)) // t=5
         .thenReturn(new NewStateRequestDto(HYSTERESIS)) // t=5

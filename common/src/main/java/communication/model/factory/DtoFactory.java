@@ -15,7 +15,6 @@ import communication.model.TrafficIngressResponseDto;
 import communication.model.base.Dto;
 import communication.model.base.DtoIdentifier;
 import domain.Position;
-import domain.Task;
 import java.io.IOException;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
@@ -91,7 +90,7 @@ public class DtoFactory {
     final long id = messageUnpacker.unpackLong();
     final double size = messageUnpacker.unpackDouble();
     final double tArrive = messageUnpacker.unpackDouble();
-    return new TrafficArrivalRequestDto(new Task(id, size, tArrive, 0.0));
+    return new TrafficArrivalRequestDto(id, size, tArrive);
   }
 
   private TrafficArrivalResponseDto createTrafficArrivalResponseDto(
