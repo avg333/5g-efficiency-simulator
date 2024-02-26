@@ -4,6 +4,8 @@ import static communication.model.base.DtoIdentifier.NEW_STATE_RESPONSE;
 import static communication.model.base.DtoIdentifier.TRAFFIC_ARRIVAL_RESPONSE;
 import static communication.model.base.DtoIdentifier.TRAFFIC_EGRESS_RESPONSE;
 import static communication.model.base.DtoIdentifier.TRAFFIC_INGRESS_RESPONSE;
+import static types.Constants.NO_NEXT_STATE;
+import static types.Constants.NO_TASK_TO_PROCESS;
 
 import communication.RegisterServer;
 import communication.RegisterServerTCP;
@@ -21,9 +23,11 @@ import domain.Task;
 import entities.Bs;
 import entities.Entity;
 import entities.Ue;
+import exception.InvalidEventTypeException;
 import java.util.*;
 import loggers.LoggerCustom;
 import lombok.extern.slf4j.Slf4j;
+import me.tongfei.progressbar.ProgressBar;
 import routing.BsRouter;
 import types.BsStateType;
 
@@ -67,10 +71,17 @@ public class Broker implements Runnable {
     processEntities(server.getEntities());
 
     final long start = System.currentTimeMillis();
-    while (t <= tFinal) {
-      final Event event = eventQueue.poll();
-      processEvent(event);
-      loggerCustom.printProgress(t, tFinal);
+    try (final ProgressBar pb = new ProgressBar("Simulating", (long) tFinal)) {
+      while (t <= tFinal) {
+        final Event event = eventQueue.poll();
+        if (event == null) {
+          log.warn("Event queue is empty. Simulation finished at t={}", t);
+          break;
+        }
+        processEvent(event);
+        pb.stepTo((long) t);
+      }
+      pb.stepTo((long) tFinal);
     }
     final long finish = System.currentTimeMillis();
 
@@ -95,7 +106,8 @@ public class Broker implements Runnable {
       case NEW_STATE -> processNewState(event);
       default -> {
         log.error("Type {} not supported. Execution completed", type);
-        System.exit(-1);
+        server.closeSockets();
+        throw new InvalidEventTypeException(type);
       }
     }
   }
@@ -112,7 +124,6 @@ public class Broker implements Runnable {
             ue.communicate(new TrafficIngressRequestDto(), TRAFFIC_INGRESS_RESPONSE.getSize());
 
     final Task task = new Task(taskCounter++, dto.getSize(), t, dto.getTUntilNextTask());
-    final Position position = new Position(dto.getX(), dto.getY());
 
     eventQueue.add(new Event(t + task.tUntilNextTask(), EventType.TRAFFIC_INGRESS, ue));
 
@@ -120,7 +131,7 @@ public class Broker implements Runnable {
       return;
     }
 
-    ue.addTask(position, task);
+    ue.addTask(new Position(dto.getX(), dto.getY()), task);
 
     loggerCustom.logTrafficIngress(t, ue, task);
 
@@ -153,13 +164,15 @@ public class Broker implements Runnable {
     loggerCustom.logTrafficArrival(t, bs, task, q, a);
 
     if (bs.getState() == BsStateType.HYSTERESIS) {
+      // How often does this happen?
       loggerCustom.logNewState(t, bs, q, state);
       eventQueue.removeIf(event -> event.getId() == bs.getIdEventNextState());
     } else if (state != bs.getState()) {
       loggerCustom.logNewState(t, bs, q, state);
     }
 
-    createEvents(bs, tNewState, tTrafficEgress, nextState);
+    createNewStateEventIfNecessary(bs, tNewState, nextState);
+    createTrafficEgressEventIfNecessary(bs, tTrafficEgress);
 
     bs.addQ(q, t);
     bs.setState(state);
@@ -183,9 +196,12 @@ public class Broker implements Runnable {
 
     loggerCustom.logTrafficEgress(t, bs.getId(), id, size, q, w);
 
-    if (state != bs.getState()) loggerCustom.logNewState(t, bs, q, state);
+    if (state != bs.getState()) {
+      loggerCustom.logNewState(t, bs, q, state);
+    }
 
-    createEvents(bs, tNewState, tTrafficEgress, nextState);
+    createNewStateEventIfNecessary(bs, tNewState, nextState);
+    createTrafficEgressEventIfNecessary(bs, tTrafficEgress);
 
     bs.addQ(q, t);
     bs.addW(w);
@@ -210,20 +226,24 @@ public class Broker implements Runnable {
       loggerCustom.logNewState(t, bs, q, state);
     }
 
-    createEvents(bs, tNewState, tTrafficEgress, nextState);
+    createNewStateEventIfNecessary(bs, tNewState, nextState);
+    createTrafficEgressEventIfNecessary(bs, tTrafficEgress);
 
     bs.setState(state);
   }
 
-  private void createEvents(Bs bs, double tNewState, double tTrafficEgress, BsStateType nextState) {
-    if (tNewState >= 0) {
+  private void createNewStateEventIfNecessary(
+      final Bs bs, final double tNewState, final BsStateType nextState) {
+    if (tNewState != NO_NEXT_STATE.getValue()) {
       final Event newState = new Event(t + tNewState, EventType.NEW_STATE, bs);
       eventQueue.add(newState);
       bs.setNextStateBs(nextState);
       bs.setIdEventNextState(newState.getId());
     }
+  }
 
-    if (tTrafficEgress > -1) {
+  private void createTrafficEgressEventIfNecessary(final Bs bs, final double tTrafficEgress) {
+    if (tTrafficEgress != NO_TASK_TO_PROCESS.getValue()) {
       eventQueue.add(new Event(t + tTrafficEgress, EventType.TRAFFIC_EGRESS, bs));
     }
   }
