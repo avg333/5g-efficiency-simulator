@@ -1,5 +1,7 @@
 package loggers;
 
+import static utils.Utils.closeResource;
+
 import broker.EventType;
 import domain.Task;
 import entities.Bs;
@@ -9,7 +11,6 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -53,35 +54,6 @@ public class LoggerCustom {
     return "events_" + formatter.format(new Date()) + ".csv";
   }
 
-  public void printProgress(double current, double total) {
-    if (current / total * 100 <= aux) {
-      return;
-    }
-
-    aux += ADVANCE;
-
-    int percent = (int) (current * 100 / total);
-    String string =
-        '\r'
-            + String.join(
-                "", Collections.nCopies(percent == 0 ? 2 : 2 - (int) (Math.log10(percent)), " "))
-            + String.format(" %d%% [", percent)
-            + String.join("", Collections.nCopies(percent, "="))
-            + '>'
-            + String.join("", Collections.nCopies(100 - percent, " "))
-            + ']'
-            + String.join(
-                "",
-                Collections.nCopies(
-                    current == 0
-                        ? (int) (Math.log10(total))
-                        : (int) (Math.log10(total)) - (int) (Math.log10(current)),
-                    " "))
-            + String.format(" %d/%d", (int) current, (int) total);
-
-    System.out.print(string);
-  }
-
   public void printResults(long elapsedTime, double t, List<Bs> bsList, List<Ue> ueList) {
     log.info("End of simulation. Execution time: {}s", elapsedTime / 1000);
     printResume(elapsedTime, t, bsList, ueList);
@@ -89,16 +61,8 @@ public class LoggerCustom {
   }
 
   private void close() {
-    try {
-      if (out != null) {
-        out.close();
-      }
-      if (printer != null) {
-        printer.close();
-      }
-    } catch (IOException e) {
-      log.error("Failed to close CSV writer", e);
-    }
+    closeResource(printer, "CSV printer");
+    closeResource(out, "CSV writer");
   }
 
   private void printResume(long elapsedTime, double t, List<Bs> bsList, List<Ue> ueList) {
@@ -177,7 +141,8 @@ public class LoggerCustom {
             null,
             null);
       } catch (IOException e) {
-        e.printStackTrace();
+        log.error("Failed to log traffic ingress", e);
+        throw new CsvWriterException("Failed to log traffic ingress", e);
       }
     }
   }

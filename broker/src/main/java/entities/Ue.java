@@ -11,11 +11,12 @@ public class Ue extends Entity {
   private long taskCounter = 0;
 
   public Ue(Position position, Communicator communicator) {
-    super(position, communicator);
+    super(communicator);
+    this.position = position;
   }
 
-  public void addTask(Position position, Task task) {
-    this.setPosition(position);
+  public void addTask(final Position position, final Task task) {
+    this.position = position;
     eL += task.size();
     eA += task.tUntilNextTask();
     taskCounter++;

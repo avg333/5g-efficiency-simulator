@@ -4,25 +4,19 @@ import communication.Communicator;
 import communication.model.CloseEntityDto;
 import communication.model.base.Dto;
 import domain.Position;
+import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class Entity {
 
   private static int idCounter = 1;
 
   private final Communicator communicator;
-  @Getter private final int id;
+  @Getter private final int id = idCounter++;
 
-  @Getter
-  @Setter(value = lombok.AccessLevel.PROTECTED)
-  private Position position;
-
-  Entity(Position position, Communicator communicator) {
-    this.id = idCounter++;
-    this.position = position;
-    this.communicator = communicator;
-  }
+  @Getter protected Position position;
 
   public Dto communicate(final Dto dto, final int msgLen) {
     // TODO Obtains the response length from the request

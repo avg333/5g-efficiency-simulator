@@ -1,5 +1,7 @@
 package communication;
 
+import static utils.Utils.closeResource;
+
 import exception.CommunicatorCreationException;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -57,16 +59,6 @@ public class CommunicatorTCP extends Communicator {
     closeResource(in, "input stream");
     closeResource(out, "output stream");
     closeResource(clientSocket, "socket");
-  }
-
-  private void closeResource(final AutoCloseable resource, final String resourceName) {
-    if (resource != null) {
-      try {
-        resource.close();
-      } catch (Exception e) {
-        log.error("Error trying to close the " + resourceName + ".", e);
-      }
-    }
   }
 
   @Override

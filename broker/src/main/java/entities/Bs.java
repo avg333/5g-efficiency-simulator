@@ -20,7 +20,8 @@ public class Bs extends Entity {
   private double tAux = 0.0;
 
   public Bs(Position position, Communicator communicator) {
-    super(position, communicator);
+    super(communicator);
+    this.position = position;
   }
 
   public double getQ() {
