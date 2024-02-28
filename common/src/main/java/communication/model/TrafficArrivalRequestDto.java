@@ -4,12 +4,10 @@ import communication.model.base.Dto;
 import communication.model.base.DtoIdentifier;
 import java.io.IOException;
 import lombok.Getter;
-import lombok.ToString;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessageUnpacker;
 
 @Getter
-@ToString
 public class TrafficArrivalRequestDto extends Dto {
 
   public static final DtoIdentifier IDENTIFIER = DtoIdentifier.TRAFFIC_ARRIVAL_REQUEST;

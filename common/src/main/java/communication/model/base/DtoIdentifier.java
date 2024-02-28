@@ -28,7 +28,7 @@ public enum DtoIdentifier {
   private final byte code;
   private final int size;
 
-  public static DtoIdentifier getDtoIdentifierByCode(final byte code) {
+  public static DtoIdentifier fromCode(final byte code) {
     final DtoIdentifier result = BY_CODE_MAP.get(code);
     if (result == null) {
       throw new IllegalArgumentException("Unknown dto identifier code: " + code);

@@ -52,10 +52,10 @@ public class TrafficEgressResponseDto extends Dto {
   public TrafficEgressResponseDto(final MessageUnpacker messageUnpacker) throws IOException {
     this(
         messageUnpacker.unpackDouble(),
-        BsStateType.getStateTypeByCode(messageUnpacker.unpackByte()),
+        BsStateType.fromCode(messageUnpacker.unpackByte()),
         messageUnpacker.unpackDouble(),
         messageUnpacker.unpackDouble(),
-        BsStateType.getStateTypeByCode(messageUnpacker.unpackByte()),
+        BsStateType.fromCode(messageUnpacker.unpackByte()),
         messageUnpacker.unpackDouble(),
         messageUnpacker.unpackLong(),
         messageUnpacker.unpackDouble());

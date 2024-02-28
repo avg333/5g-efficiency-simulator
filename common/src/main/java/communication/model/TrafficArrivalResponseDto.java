@@ -44,10 +44,10 @@ public class TrafficArrivalResponseDto extends Dto {
   public TrafficArrivalResponseDto(final MessageUnpacker messageUnpacker) throws IOException {
     this(
         messageUnpacker.unpackDouble(),
-        BsStateType.getStateTypeByCode(messageUnpacker.unpackByte()),
+        BsStateType.fromCode(messageUnpacker.unpackByte()),
         messageUnpacker.unpackDouble(),
         messageUnpacker.unpackDouble(),
-        BsStateType.getStateTypeByCode(messageUnpacker.unpackByte()),
+        BsStateType.fromCode(messageUnpacker.unpackByte()),
         messageUnpacker.unpackDouble());
   }
 

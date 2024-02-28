@@ -40,10 +40,10 @@ public class NewStateResponseDto extends Dto {
   public NewStateResponseDto(final MessageUnpacker messageUnpacker) throws IOException {
     this(
         messageUnpacker.unpackDouble(),
-        BsStateType.getStateTypeByCode(messageUnpacker.unpackByte()),
+        BsStateType.fromCode(messageUnpacker.unpackByte()),
         messageUnpacker.unpackDouble(),
         messageUnpacker.unpackDouble(),
-        BsStateType.getStateTypeByCode(messageUnpacker.unpackByte()));
+        BsStateType.fromCode(messageUnpacker.unpackByte()));
   }
 
   @Override

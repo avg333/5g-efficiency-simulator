@@ -28,7 +28,7 @@ public class RegisterRequestDto extends Dto {
 
   public RegisterRequestDto(final MessageUnpacker messageUnpacker) throws IOException {
     this(
-        EntityType.getCommunicatorTypeByCode(messageUnpacker.unpackInt()),
+        EntityType.fromCode(messageUnpacker.unpackInt()),
         messageUnpacker.unpackDouble(),
         messageUnpacker.unpackDouble());
   }

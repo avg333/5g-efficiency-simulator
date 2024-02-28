@@ -12,7 +12,7 @@ public enum CommunicatorMode {
 
   private final char value;
 
-  public static CommunicatorMode getCommunicatorModeByCode(final char code) {
+  public static CommunicatorMode fromCode(final char code) {
     return Arrays.stream(CommunicatorMode.values())
         .filter(e -> e.value == code)
         .findAny()

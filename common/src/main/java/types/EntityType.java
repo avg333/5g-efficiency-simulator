@@ -13,7 +13,7 @@ public enum EntityType {
 
   private final int value;
 
-  public static EntityType getCommunicatorTypeByCode(final int code) {
+  public static EntityType fromCode(final int code) {
     return Arrays.stream(values())
         .filter(communicatorType -> communicatorType.getValue() == code)
         .findFirst()

@@ -20,7 +20,7 @@ public enum BsStateType {
       Stream.of(values()).collect(Collectors.toMap(BsStateType::getValue, stateType -> stateType));
   private final byte value;
 
-  public static BsStateType getStateTypeByCode(final byte code) {
+  public static BsStateType fromCode(final byte code) {
     final BsStateType result = BY_VALUE_MAP.get(code);
     if (result == null) {
       throw new IllegalArgumentException("Value " + code + " not supported for the bs state type");

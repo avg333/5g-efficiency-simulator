@@ -29,8 +29,8 @@ public abstract class Communicator {
   }
 
   public final Dto communicate(final Dto dto, final int dataLen) {
-    this.sendMessage(dto);
-    return this.receiveMessage(dataLen);
+    sendMessage(dto);
+    return receiveMessage(dataLen);
   }
 
   public final Dto receiveMessage(final int dataLen) {
