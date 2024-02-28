@@ -7,12 +7,14 @@ import org.msgpack.core.MessageBufferPacker;
 
 public class CloseBrokerDto extends Dto {
 
+  public static final DtoIdentifier IDENTIFIER = DtoIdentifier.CLOSE_BROKER;
+
   public CloseBrokerDto() {
-    super(DtoIdentifier.CLOSE_BROKER);
+    super(IDENTIFIER);
   }
 
   @Override
-  protected void map(final MessageBufferPacker messageBufferPacker) throws IOException {
+  protected final void map(final MessageBufferPacker messageBufferPacker) throws IOException {
     // No data to pack
   }
 }

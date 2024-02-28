@@ -1,8 +1,8 @@
 package routing;
 
 import domain.Position;
-import entities.Bs;
-import entities.Ue;
+import domain.entities.Bs;
+import domain.entities.Ue;
 import java.util.Comparator;
 import java.util.List;
 

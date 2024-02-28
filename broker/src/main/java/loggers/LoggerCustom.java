@@ -2,10 +2,10 @@ package loggers;
 
 import static utils.Utils.closeResource;
 
-import broker.EventType;
+import domain.EventType;
 import domain.Task;
-import entities.Bs;
-import entities.Ue;
+import domain.entities.Bs;
+import domain.entities.Ue;
 import exception.CsvWriterException;
 import java.io.BufferedWriter;
 import java.io.FileWriter;

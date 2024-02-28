@@ -2,29 +2,41 @@ package communication.model;
 
 import communication.model.base.Dto;
 import communication.model.base.DtoIdentifier;
-import domain.Position;
 import java.io.IOException;
 import lombok.Getter;
 import org.msgpack.core.MessageBufferPacker;
+import org.msgpack.core.MessageUnpacker;
 import types.EntityType;
 
 @Getter
 public class RegisterRequestDto extends Dto {
 
+  public static final DtoIdentifier IDENTIFIER = DtoIdentifier.REGISTER_REQUEST;
+
   private final EntityType type;
 
-  private final Position position;
+  private final double x;
 
-  public RegisterRequestDto(EntityType type, Position position) {
-    super(DtoIdentifier.REGISTER_REQUEST);
+  private final double y;
+
+  public RegisterRequestDto(final EntityType type, final double x, final double y) {
+    super(IDENTIFIER);
     this.type = type;
-    this.position = position;
+    this.x = x;
+    this.y = y;
+  }
+
+  public RegisterRequestDto(final MessageUnpacker messageUnpacker) throws IOException {
+    this(
+        EntityType.getCommunicatorTypeByCode(messageUnpacker.unpackInt()),
+        messageUnpacker.unpackDouble(),
+        messageUnpacker.unpackDouble());
   }
 
   @Override
-  protected void map(final MessageBufferPacker messageBufferPacker) throws IOException {
+  protected final void map(final MessageBufferPacker messageBufferPacker) throws IOException {
     messageBufferPacker.packInt(type.getValue());
-    messageBufferPacker.packDouble(position.getX());
-    messageBufferPacker.packDouble(position.getY());
+    messageBufferPacker.packDouble(x);
+    messageBufferPacker.packDouble(y);
   }
 }

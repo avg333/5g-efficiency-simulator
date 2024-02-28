@@ -22,7 +22,9 @@ public abstract class Communicator {
     log.debug("Trying to register the {}", type);
     final RegisterResponseDto registerResponseDto =
         (RegisterResponseDto)
-            communicate(new RegisterRequestDto(type, position), REGISTER_RESPONSE_SIZE);
+            communicate(
+                new RegisterRequestDto(type, position.getX(), position.getY()),
+                REGISTER_RESPONSE_SIZE);
     log.debug("Registered the {} with id {}", type, registerResponseDto.getId());
   }
 

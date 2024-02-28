@@ -1,6 +1,6 @@
 package basestation;
 
-import static communication.model.base.DtoIdentifier.TRAFFIC_ARRIVAL_REQUEST;
+import static communication.model.base.DtoIdentifier.NEW_STATE_RESPONSE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doNothing;
@@ -44,7 +44,7 @@ class BaseStationTest {
   private static final BaseStationConfig BASE_STATION_CONFIG =
       new BaseStationConfig(AlgorithmMode.NO_COALESCING, 1, 0, 0, 0, 0);
 
-  private static final int MSG_LEN = TRAFFIC_ARRIVAL_REQUEST.getSize();
+  private static final int MSG_LEN = NEW_STATE_RESPONSE.getSize();
 
   @Mock private Communicator communicator;
 

@@ -1,4 +1,4 @@
-package broker;
+package domain;
 
 public enum EventType {
   TRAFFIC_INGRESS,

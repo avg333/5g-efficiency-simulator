@@ -16,8 +16,8 @@
       <version>1.10.0</version>
     </dependency>
     <dependency>
-      <groupId>me.tongfei</groupId>
       <artifactId>progressbar</artifactId>
+      <groupId>me.tongfei</groupId>
       <version>0.10.0</version>
     </dependency>
   </dependencies>

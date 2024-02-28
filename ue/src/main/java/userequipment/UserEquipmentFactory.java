@@ -51,10 +51,8 @@ public class UserEquipmentFactory {
 
     Communicator communicator =
         config.getBoolean("tcp")
-            ? new CommunicatorTCP(
-                config.getString("ipBroker"), config.getInt("portBroker"))
-            : new CommunicatorUDP(
-                config.getString("ipBroker"), config.getInt("portBroker"));
+            ? new CommunicatorTCP(config.getString("ipBroker"), config.getInt("portBroker"))
+            : new CommunicatorUDP(config.getString("ipBroker"), config.getInt("portBroker"));
 
     return new UserEquipment(position, communicator, mobilityDist, taskGenerator);
   }

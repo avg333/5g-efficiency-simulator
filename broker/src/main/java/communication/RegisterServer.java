@@ -7,9 +7,9 @@ import communication.model.RegisterRequestDto;
 import communication.model.RegisterResponseDto;
 import communication.model.base.Dto;
 import domain.Position;
-import entities.Bs;
-import entities.Entity;
-import entities.Ue;
+import domain.entities.Bs;
+import domain.entities.Entity;
+import domain.entities.Ue;
 import exception.MessageProcessingException;
 import exception.NotSupportedActionException;
 import java.io.IOException;
@@ -84,8 +84,12 @@ public abstract class RegisterServer {
         // If the sender is the broker, the server should stop
         return true;
       }
-      case USER_EQUIPMENT -> registerUe(registerRequestDto.getPosition(), communicator);
-      case BASE_STATION -> registerBs(registerRequestDto.getPosition(), communicator);
+      case USER_EQUIPMENT ->
+          registerUe(
+              new Position(registerRequestDto.getX(), registerRequestDto.getY()), communicator);
+      case BASE_STATION ->
+          registerBs(
+              new Position(registerRequestDto.getX(), registerRequestDto.getY()), communicator);
     }
 
     return false;

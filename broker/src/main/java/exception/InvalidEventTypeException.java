@@ -1,6 +1,6 @@
 package exception;
 
-import broker.EventType;
+import domain.EventType;
 
 public class InvalidEventTypeException extends RuntimeException {
   public InvalidEventTypeException(EventType eventType) {

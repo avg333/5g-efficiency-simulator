@@ -18,10 +18,8 @@ public class BaseStationFactory {
 
     Communicator communicator =
         config.getBoolean("tcp")
-            ? new CommunicatorTCP(
-                config.getString("ipBroker"), config.getInt("portBroker"))
-            : new CommunicatorUDP(
-                config.getString("ipBroker"), config.getInt("portBroker"));
+            ? new CommunicatorTCP(config.getString("ipBroker"), config.getInt("portBroker"))
+            : new CommunicatorUDP(config.getString("ipBroker"), config.getInt("portBroker"));
 
     BaseStationConfig baseStationConfig =
         new BaseStationConfig(

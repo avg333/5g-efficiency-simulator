@@ -1,6 +1,6 @@
-package broker;
+package domain;
 
-import entities.Entity;
+import domain.entities.Entity;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 

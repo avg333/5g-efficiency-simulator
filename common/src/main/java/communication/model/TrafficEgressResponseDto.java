@@ -5,10 +5,13 @@ import communication.model.base.DtoIdentifier;
 import java.io.IOException;
 import lombok.Getter;
 import org.msgpack.core.MessageBufferPacker;
+import org.msgpack.core.MessageUnpacker;
 import types.BsStateType;
 
 @Getter
 public class TrafficEgressResponseDto extends Dto {
+
+  public static final DtoIdentifier IDENTIFIER = DtoIdentifier.TRAFFIC_EGRESS_RESPONSE;
 
   private final double q;
 
@@ -27,15 +30,15 @@ public class TrafficEgressResponseDto extends Dto {
   private final double size;
 
   public TrafficEgressResponseDto(
-      double q,
-      BsStateType state,
-      double tTrafficEgress,
-      double tNewState,
-      BsStateType nextState,
-      double w,
-      long id,
-      double size) {
-    super(DtoIdentifier.TRAFFIC_EGRESS_RESPONSE);
+      final double q,
+      final BsStateType state,
+      final double tTrafficEgress,
+      final double tNewState,
+      final BsStateType nextState,
+      final double w,
+      final long id,
+      final double size) {
+    super(IDENTIFIER);
     this.q = q;
     this.state = state;
     this.tTrafficEgress = tTrafficEgress;
@@ -46,8 +49,20 @@ public class TrafficEgressResponseDto extends Dto {
     this.size = size;
   }
 
+  public TrafficEgressResponseDto(final MessageUnpacker messageUnpacker) throws IOException {
+    this(
+        messageUnpacker.unpackDouble(),
+        BsStateType.getStateTypeByCode(messageUnpacker.unpackByte()),
+        messageUnpacker.unpackDouble(),
+        messageUnpacker.unpackDouble(),
+        BsStateType.getStateTypeByCode(messageUnpacker.unpackByte()),
+        messageUnpacker.unpackDouble(),
+        messageUnpacker.unpackLong(),
+        messageUnpacker.unpackDouble());
+  }
+
   @Override
-  protected void map(final MessageBufferPacker messageBufferPacker) throws IOException {
+  protected final void map(final MessageBufferPacker messageBufferPacker) throws IOException {
     messageBufferPacker.packDouble(q);
     messageBufferPacker.packByte(state.getValue());
     messageBufferPacker.packDouble(tTrafficEgress);

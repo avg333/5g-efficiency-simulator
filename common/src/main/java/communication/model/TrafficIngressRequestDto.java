@@ -7,12 +7,14 @@ import org.msgpack.core.MessageBufferPacker;
 
 public class TrafficIngressRequestDto extends Dto {
 
+  public static final DtoIdentifier IDENTIFIER = DtoIdentifier.TRAFFIC_INGRESS_REQUEST;
+
   public TrafficIngressRequestDto() {
-    super(DtoIdentifier.TRAFFIC_INGRESS_REQUEST);
+    super(IDENTIFIER);
   }
 
   @Override
-  protected void map(final MessageBufferPacker messageBufferPacker) throws IOException {
+  protected final void map(final MessageBufferPacker messageBufferPacker) throws IOException {
     // No data to pack
   }
 }

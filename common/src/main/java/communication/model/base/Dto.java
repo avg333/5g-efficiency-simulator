@@ -14,7 +14,7 @@ public abstract class Dto {
 
   protected abstract void map(MessageBufferPacker messageBufferPacker) throws IOException;
 
-  public byte[] toByteArray() throws IOException {
+  public final byte[] toByteArray() throws IOException {
     try (final MessageBufferPacker messageBufferPacker = MessagePack.newDefaultBufferPacker()) {
       messageBufferPacker.packByte(identifier.getCode());
       map(messageBufferPacker);

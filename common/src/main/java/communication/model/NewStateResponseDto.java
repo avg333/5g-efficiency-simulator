@@ -5,10 +5,13 @@ import communication.model.base.DtoIdentifier;
 import java.io.IOException;
 import lombok.Getter;
 import org.msgpack.core.MessageBufferPacker;
+import org.msgpack.core.MessageUnpacker;
 import types.BsStateType;
 
 @Getter
 public class NewStateResponseDto extends Dto {
+
+  public static final DtoIdentifier IDENTIFIER = DtoIdentifier.NEW_STATE_RESPONSE;
 
   private final double q;
 
@@ -21,12 +24,12 @@ public class NewStateResponseDto extends Dto {
   private final BsStateType nextState;
 
   public NewStateResponseDto(
-      double q,
-      BsStateType stateReceived,
-      double tTrafficEgress,
-      double tNewState,
-      BsStateType nextState) {
-    super(DtoIdentifier.NEW_STATE_RESPONSE);
+      final double q,
+      final BsStateType stateReceived,
+      final double tTrafficEgress,
+      final double tNewState,
+      final BsStateType nextState) {
+    super(IDENTIFIER);
     this.q = q;
     this.stateReceived = stateReceived;
     this.tTrafficEgress = tTrafficEgress;
@@ -34,8 +37,17 @@ public class NewStateResponseDto extends Dto {
     this.nextState = nextState;
   }
 
+  public NewStateResponseDto(final MessageUnpacker messageUnpacker) throws IOException {
+    this(
+        messageUnpacker.unpackDouble(),
+        BsStateType.getStateTypeByCode(messageUnpacker.unpackByte()),
+        messageUnpacker.unpackDouble(),
+        messageUnpacker.unpackDouble(),
+        BsStateType.getStateTypeByCode(messageUnpacker.unpackByte()));
+  }
+
   @Override
-  protected void map(final MessageBufferPacker messageBufferPacker) throws IOException {
+  protected final void map(final MessageBufferPacker messageBufferPacker) throws IOException {
     messageBufferPacker.packDouble(q);
     messageBufferPacker.packByte(stateReceived.getValue());
     messageBufferPacker.packDouble(tTrafficEgress);
