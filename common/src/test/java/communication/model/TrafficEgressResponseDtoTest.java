@@ -21,4 +21,9 @@ class TrafficEgressResponseDtoTest extends BaseDtoTest {
   protected Dto createResult(final MessageUnpacker messageUnpacker) throws IOException {
     return new TrafficEgressResponseDto(messageUnpacker);
   }
+
+  @Override
+  protected int offSet() {
+    return 1;
+  }
 }

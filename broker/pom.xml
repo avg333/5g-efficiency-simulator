@@ -2,7 +2,16 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns="http://maven.apache.org/POM/4.0.0"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <artifactId>5g-efficiency-simulator</artifactId>
+    <groupId>org.5gefficiencysimulator</groupId>
+    <version>2.0</version>
+  </parent>
+
   <artifactId>broker</artifactId>
+
   <dependencies>
     <dependency>
       <artifactId>common</artifactId>
@@ -13,19 +22,10 @@
     <dependency>
       <artifactId>commons-csv</artifactId>
       <groupId>org.apache.commons</groupId>
-      <version>1.10.0</version>
     </dependency>
     <dependency>
       <artifactId>progressbar</artifactId>
       <groupId>me.tongfei</groupId>
-      <version>0.10.0</version>
     </dependency>
   </dependencies>
-
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <artifactId>5g-efficiency-simulator</artifactId>
-    <groupId>org.5gefficiencysimulator</groupId>
-    <version>2.0</version>
-  </parent>
 </project>
