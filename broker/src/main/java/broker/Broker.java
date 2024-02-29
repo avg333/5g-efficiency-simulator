@@ -8,8 +8,6 @@ import static types.Constants.NO_NEXT_STATE;
 import static types.Constants.NO_TASK_TO_PROCESS;
 
 import communication.RegisterServer;
-import communication.RegisterServerTCP;
-import communication.RegisterServerUDP;
 import communication.model.NewStateRequestDto;
 import communication.model.NewStateResponseDto;
 import communication.model.TrafficArrivalRequestDto;
@@ -28,41 +26,26 @@ import domain.entities.Ue;
 import exception.InvalidEventTypeException;
 import java.util.*;
 import loggers.LoggerCustom;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.tongfei.progressbar.ProgressBar;
 import routing.BsRouter;
 import types.BsStateType;
 
 @Slf4j
+@RequiredArgsConstructor
 public class Broker implements Runnable {
 
   private final RegisterServer server;
   private final BsRouter bsRouter;
   private final double tFinal;
+  private final LoggerCustom loggerCustom;
   private final PriorityQueue<Event> eventQueue =
       new PriorityQueue<>(Comparator.comparing(Event::getT));
-  private final LoggerCustom loggerCustom;
   private List<Bs> bsList;
   private List<Ue> ueList;
   private double t = 0;
   private long taskCounter = 0;
-
-  public Broker(
-      int port, boolean communicatorModeTCP, boolean eventsLog, BsRouter bsRouter, double tFinal) {
-    this.bsRouter = bsRouter;
-    this.tFinal = tFinal;
-    this.loggerCustom = new LoggerCustom(eventsLog);
-
-    server = (communicatorModeTCP) ? new RegisterServerTCP(port) : new RegisterServerUDP(port);
-
-    log.info(
-        "Started in [port={}] with {}, simulator time [t={}] and {}",
-        port,
-        bsRouter,
-        tFinal,
-        loggerCustom);
-    log.info("Press enter to start the simulation");
-  }
 
   public static void main(String[] args) {
     new Thread(new BrokerFactory().createBroker()).start();
