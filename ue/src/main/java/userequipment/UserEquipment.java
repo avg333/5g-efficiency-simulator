@@ -3,7 +3,7 @@ package userequipment;
 import static communication.model.base.DtoIdentifier.TRAFFIC_INGRESS_REQUEST;
 import static types.EntityType.USER_EQUIPMENT;
 
-import communication.Communicator;
+import communication.ClientCommunicator;
 import communication.model.TrafficIngressResponseDto;
 import communication.model.base.Dto;
 import distribution.Distribution;
@@ -17,6 +17,8 @@ import types.EntityType;
 @Slf4j
 public class UserEquipment extends BaseEntity {
 
+  private static final EntityType TYPE = USER_EQUIPMENT;
+
   private static final int MSG_LEN = getMaxMsgLen(TRAFFIC_INGRESS_REQUEST);
 
   private final Distribution mobilityDist;
@@ -24,18 +26,16 @@ public class UserEquipment extends BaseEntity {
   private final TaskGenerator taskGenerator;
 
   public UserEquipment(
-      Position position,
-      Communicator communicator,
-      Distribution mobilityDist,
-      TaskGenerator taskGenerator) {
-    super(position, communicator);
+      final ClientCommunicator communicator,
+      final Position position,
+      final Distribution mobilityDist,
+      final TaskGenerator taskGenerator) {
+    super(TYPE, communicator, position);
     this.mobilityDist = mobilityDist;
     this.taskGenerator = taskGenerator;
-
-    log.info("Registered in {}", communicator);
   }
 
-  public static void main(String[] args) {
+  public static void main(final String[] args) {
     new Thread(new UserEquipmentFactory().createUserEquipment()).start();
   }
 

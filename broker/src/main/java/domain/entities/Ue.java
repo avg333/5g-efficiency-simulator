@@ -1,6 +1,6 @@
 package domain.entities;
 
-import communication.Communicator;
+import communication.ClientCommunicator;
 import domain.Position;
 import domain.Task;
 
@@ -10,7 +10,7 @@ public class Ue extends Entity {
   private double eA = 0.0;
   private long taskCounter = 0;
 
-  public Ue(Position position, Communicator communicator) {
+  public Ue(Position position, ClientCommunicator communicator) {
     super(communicator);
     this.position = position;
   }

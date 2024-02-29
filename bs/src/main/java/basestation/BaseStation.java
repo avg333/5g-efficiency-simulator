@@ -8,7 +8,7 @@ import static types.Constants.NO_NEXT_STATE;
 import static types.Constants.NO_TASK_TO_PROCESS;
 import static types.EntityType.BASE_STATION;
 
-import communication.Communicator;
+import communication.ClientCommunicator;
 import communication.model.NewStateRequestDto;
 import communication.model.NewStateResponseDto;
 import communication.model.TrafficArrivalRequestDto;
@@ -29,6 +29,8 @@ import types.EntityType;
 @Slf4j
 public class BaseStation extends BaseEntity {
 
+  private static final EntityType TYPE = BASE_STATION;
+
   private static final int TIME_TO_ENTER_HYSTERESIS = 0;
   private static final int TIME_TO_EXIT_HYSTERESIS = 0;
   private static final int TIME_TO_SUSPEND = 0;
@@ -46,14 +48,14 @@ public class BaseStation extends BaseEntity {
   private double lastTaskArrivalTime = 0.0;
 
   public BaseStation(
-      Position position, Communicator communicator, BaseStationConfig baseStationConfig) {
-    super(position, communicator);
+      final ClientCommunicator communicator,
+      final Position position,
+      final BaseStationConfig baseStationConfig) {
+    super(TYPE, communicator, position);
     this.baseStationConfig = baseStationConfig;
-
-    log.info("Registered in {}", communicator);
   }
 
-  public static void main(String[] args) {
+  public static void main(final String[] args) {
     new Thread(new BaseStationFactory().createBaseStation()).start();
   }
 

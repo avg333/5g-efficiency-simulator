@@ -1,8 +1,8 @@
 package userequipment;
 
-import communication.Communicator;
-import communication.CommunicatorTCP;
-import communication.CommunicatorUDP;
+import communication.ClientCommunicator;
+import communication.ClientCommunicatorTCP;
+import communication.ClientCommunicatorUDP;
 import config.Config;
 import distribution.Distribution;
 import distribution.DistributionMode;
@@ -49,11 +49,11 @@ public class UserEquipmentFactory {
 
     TaskGenerator taskGenerator = new TaskGenerator(sizeDist, delayDist);
 
-    Communicator communicator =
+    ClientCommunicator communicator =
         config.getBoolean("tcp")
-            ? new CommunicatorTCP(config.getString("ipBroker"), config.getInt("portBroker"))
-            : new CommunicatorUDP(config.getString("ipBroker"), config.getInt("portBroker"));
+            ? new ClientCommunicatorTCP(config.getString("ipBroker"), config.getInt("portBroker"))
+            : new ClientCommunicatorUDP(config.getString("ipBroker"), config.getInt("portBroker"));
 
-    return new UserEquipment(position, communicator, mobilityDist, taskGenerator);
+    return new UserEquipment(communicator, position, mobilityDist, taskGenerator);
   }
 }

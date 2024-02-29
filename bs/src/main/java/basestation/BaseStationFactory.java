@@ -1,9 +1,9 @@
 package basestation;
 
 import algorithm.AlgorithmMode;
-import communication.Communicator;
-import communication.CommunicatorTCP;
-import communication.CommunicatorUDP;
+import communication.ClientCommunicator;
+import communication.ClientCommunicatorTCP;
+import communication.ClientCommunicatorUDP;
 import config.Config;
 import domain.Position;
 
@@ -16,10 +16,10 @@ public class BaseStationFactory {
 
     Position position = new Position(config.getDouble("x"), config.getDouble("y"));
 
-    Communicator communicator =
+    ClientCommunicator communicator =
         config.getBoolean("tcp")
-            ? new CommunicatorTCP(config.getString("ipBroker"), config.getInt("portBroker"))
-            : new CommunicatorUDP(config.getString("ipBroker"), config.getInt("portBroker"));
+            ? new ClientCommunicatorTCP(config.getString("ipBroker"), config.getInt("portBroker"))
+            : new ClientCommunicatorUDP(config.getString("ipBroker"), config.getInt("portBroker"));
 
     BaseStationConfig baseStationConfig =
         new BaseStationConfig(
@@ -30,6 +30,6 @@ public class BaseStationFactory {
             config.getDouble("tHysteresis"),
             config.getDouble("algorithmParam"));
 
-    return new BaseStation(position, communicator, baseStationConfig);
+    return new BaseStation(communicator, position, baseStationConfig);
   }
 }

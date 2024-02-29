@@ -11,13 +11,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class CommunicatorTCPTest {
+class ClientCommunicatorTCPTest {
 
   private static final int RANDOM_FREE_PORT = 0;
   private static final String LOCALHOST = "localhost";
 
   private ServerSocket serverSocket;
-  private CommunicatorTCP client;
+  private ClientCommunicatorTCP client;
 
   @BeforeEach
   void setUp() throws IOException {
@@ -40,7 +40,7 @@ class CommunicatorTCPTest {
 
   @Test
   void testCommunicatorTCP() {
-    client = new CommunicatorTCP(LOCALHOST, serverSocket.getLocalPort());
+    client = new ClientCommunicatorTCP(LOCALHOST, serverSocket.getLocalPort());
     System.out.println("Testing CommunicatorTCP");
     client.sendMessage(new CloseBrokerDto());
     System.out.println("Tested CommunicatorTCP");
@@ -49,7 +49,7 @@ class CommunicatorTCPTest {
   private void setupClientInServer() throws IOException {
     while (true) {
       final Socket clientSocket = serverSocket.accept();
-      final Communicator communicator = new CommunicatorTCP(clientSocket);
+      final BaseClientCommunicator communicator = new ClientCommunicatorTCP(clientSocket);
       final Dto dto = communicator.receiveMessage(21);
 
       if (dto instanceof CloseBrokerDto) {
@@ -66,7 +66,7 @@ class CommunicatorTCPTest {
   }
 
   private void closeServerSocket() throws IOException {
-    new CommunicatorTCP(LOCALHOST, serverSocket.getLocalPort()).sendMessage(new CloseBrokerDto());
+    new ClientCommunicatorTCP(LOCALHOST, serverSocket.getLocalPort()).sendMessage(new CloseBrokerDto());
     serverSocket.close();
     client.close();
   }

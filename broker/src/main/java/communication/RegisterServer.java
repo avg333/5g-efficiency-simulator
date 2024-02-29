@@ -64,7 +64,7 @@ public abstract class RegisterServer {
 
   protected abstract void close();
 
-  protected boolean processDto(final Dto dto, final Communicator communicator) {
+  protected boolean processDto(final Dto dto, final ClientCommunicator communicator) {
     return switch (dto.getIdentifier()) {
       case CLOSE_BROKER -> true;
       case REGISTER_REQUEST -> processRegister(communicator, (RegisterRequestDto) dto);
@@ -76,7 +76,7 @@ public abstract class RegisterServer {
   }
 
   private boolean processRegister(
-      Communicator communicator, RegisterRequestDto registerRequestDto) {
+      ClientCommunicator communicator, RegisterRequestDto registerRequestDto) {
     final EntityType type = registerRequestDto.getType();
 
     switch (type) {
@@ -95,14 +95,14 @@ public abstract class RegisterServer {
     return false;
   }
 
-  private void registerBs(final Position position, final Communicator communicator) {
+  private void registerBs(final Position position, final ClientCommunicator communicator) {
     final Bs bs = new Bs(position, communicator);
     entities.add(bs);
     communicator.sendMessage(new RegisterResponseDto(bs.getId()));
     log.info("BS [id={}] {}", bs.getId(), communicator);
   }
 
-  private void registerUe(final Position position, final Communicator communicator) {
+  private void registerUe(final Position position, final ClientCommunicator communicator) {
     final Ue ue = new Ue(position, communicator);
     entities.add(ue);
     communicator.sendMessage(new RegisterResponseDto(ue.getId()));

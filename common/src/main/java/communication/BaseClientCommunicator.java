@@ -6,26 +6,21 @@ import communication.model.RegisterRequestDto;
 import communication.model.RegisterResponseDto;
 import communication.model.base.Dto;
 import communication.model.factory.DtoFactory;
-import domain.Position;
 import exception.MessageProcessingException;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
-import types.EntityType;
 
 @Slf4j
-public abstract class Communicator {
+public abstract class BaseClientCommunicator implements ClientCommunicator {
   protected static final int TIMEOUT = 0;
   private static final int REGISTER_RESPONSE_SIZE = REGISTER_RESPONSE.getSize();
   private final DtoFactory dtoFactory = new DtoFactory();
 
-  public final void register(final EntityType type, final Position position) {
-    log.debug("Trying to register the {}", type);
+  public final void register(final RegisterRequestDto dto) {
+    log.debug("Trying to register the {}", dto.getType());
     final RegisterResponseDto registerResponseDto =
-        (RegisterResponseDto)
-            communicate(
-                new RegisterRequestDto(type, position.getX(), position.getY()),
-                REGISTER_RESPONSE_SIZE);
-    log.debug("Registered the {} with id {}", type, registerResponseDto.getId());
+        (RegisterResponseDto) communicate(dto, REGISTER_RESPONSE_SIZE);
+    log.debug("Registered the {} with id {}", dto.getType(), registerResponseDto.getId());
   }
 
   public final Dto communicate(final Dto dto, final int dataLen) {
@@ -36,8 +31,9 @@ public abstract class Communicator {
   public final Dto receiveMessage(final int dataLen) {
     try {
       return dtoFactory.createDto(receive(dataLen));
-    } catch (IOException e) {
+    } catch (final IOException e) {
       log.error("Error trying to receive a message", e);
+      // TODO: Import KO
       this.close();
       throw new MessageProcessingException("Error trying to receive a message", e);
     }
@@ -46,16 +42,17 @@ public abstract class Communicator {
   public final void sendMessage(final Dto dto) {
     try {
       send(dto.toByteArray());
-    } catch (IOException e) {
+    } catch (final IOException e) {
       log.error("Error trying to send a message", e);
+      // TODO: Import KO
       this.close();
       throw new MessageProcessingException("Error trying to send a message", e);
     }
   }
 
+  public abstract void close();
+
   protected abstract void send(byte[] message) throws IOException;
 
   protected abstract byte[] receive(int dataLen) throws IOException;
-
-  public abstract void close();
 }

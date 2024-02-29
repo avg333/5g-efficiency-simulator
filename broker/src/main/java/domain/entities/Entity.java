@@ -1,6 +1,6 @@
 package domain.entities;
 
-import communication.Communicator;
+import communication.ClientCommunicator;
 import communication.model.CloseEntityDto;
 import communication.model.base.Dto;
 import domain.Position;
@@ -13,7 +13,7 @@ public abstract class Entity {
 
   private static int idCounter = 1;
 
-  private final Communicator communicator;
+  private final ClientCommunicator communicator;
   @Getter private final int id = idCounter++;
 
   @Getter protected Position position;

@@ -17,7 +17,7 @@ import static types.Constants.NO_TASK_TO_PROCESS;
 import static types.EntityType.BASE_STATION;
 
 import algorithm.AlgorithmMode;
-import communication.Communicator;
+import communication.ClientCommunicator;
 import communication.model.CloseEntityDto;
 import communication.model.NewStateRequestDto;
 import communication.model.NewStateResponseDto;
@@ -46,7 +46,7 @@ class BaseStationTest {
 
   private static final int MSG_LEN = NEW_STATE_RESPONSE.getSize();
 
-  @Mock private Communicator communicator;
+  @Mock private ClientCommunicator communicator;
 
   private BaseStation baseStation;
 
@@ -142,7 +142,7 @@ class BaseStationTest {
   @BeforeEach
   void setUp() {
     baseStation =
-        new BaseStation(Instancio.create(Position.class), communicator, BASE_STATION_CONFIG);
+        new BaseStation(communicator, Instancio.create(Position.class), BASE_STATION_CONFIG);
   }
 
   @Test

@@ -10,12 +10,12 @@ import java.net.InetAddress;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class CommunicatorUDP extends Communicator {
+public class ClientCommunicatorUDP extends BaseClientCommunicator {
   private final int portBroker;
   private final DatagramSocket sc;
   private final InetAddress ad;
 
-  public CommunicatorUDP(final DatagramSocket sc, final InetAddress ad, final int portBroker) {
+  public ClientCommunicatorUDP(final DatagramSocket sc, final InetAddress ad, final int portBroker) {
     try {
       this.sc = sc;
       this.sc.setSoTimeout(TIMEOUT);
@@ -28,7 +28,7 @@ public class CommunicatorUDP extends Communicator {
     }
   }
 
-  public CommunicatorUDP(final String ipBroker, final int portBroker) {
+  public ClientCommunicatorUDP(final String ipBroker, final int portBroker) {
     this(createSocket(), createAddress(ipBroker), portBroker);
   }
 

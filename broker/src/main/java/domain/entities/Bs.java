@@ -1,6 +1,7 @@
 package domain.entities;
 
-import communication.Communicator;
+import communication.BaseClientCommunicator;
+import communication.ClientCommunicator;
 import domain.Position;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,7 +20,7 @@ public class Bs extends Entity {
   private double qAux = 0.0;
   private double tAux = 0.0;
 
-  public Bs(Position position, Communicator communicator) {
+  public Bs(Position position, ClientCommunicator communicator) {
     super(communicator);
     this.position = position;
   }

@@ -10,12 +10,12 @@ import java.net.Socket;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class CommunicatorTCP extends Communicator {
+public class ClientCommunicatorTCP extends BaseClientCommunicator {
   private final Socket clientSocket;
   private final DataOutputStream out;
   private final DataInputStream in;
 
-  public CommunicatorTCP(final Socket clientSocket) {
+  public ClientCommunicatorTCP(final Socket clientSocket) {
     try {
       this.clientSocket = clientSocket;
       this.clientSocket.setSoTimeout(TIMEOUT);
@@ -27,7 +27,7 @@ public class CommunicatorTCP extends Communicator {
     }
   }
 
-  public CommunicatorTCP(final String ip, final int port) {
+  public ClientCommunicatorTCP(final String ip, final int port) {
     this(createSocket(ip, port));
   }
 

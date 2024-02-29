@@ -19,7 +19,7 @@ public class RegisterServerTCP extends RegisterServer {
     try (final ServerSocket serverSocket = new ServerSocket(port)) {
       while (true) {
         final Socket clientSocket = serverSocket.accept();
-        final Communicator communicator = new CommunicatorTCP(clientSocket);
+        final ClientCommunicator communicator = new ClientCommunicatorTCP(clientSocket);
         final Dto dto = communicator.receiveMessage(MSG_LEN);
 
         if (processDto(dto, communicator)) {
@@ -34,7 +34,7 @@ public class RegisterServerTCP extends RegisterServer {
 
   @Override
   protected void sendCloseMsgToServer(final Dto dto) {
-    new CommunicatorTCP(LOCALHOST, port).sendMessage(dto);
+    new ClientCommunicatorTCP(LOCALHOST, port).sendMessage(dto);
   }
 
   protected final void close() {

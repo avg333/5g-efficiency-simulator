@@ -10,7 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static types.EntityType.USER_EQUIPMENT;
 
-import communication.Communicator;
+import communication.ClientCommunicator;
 import communication.model.CloseEntityDto;
 import communication.model.TrafficEgressRequestDto;
 import communication.model.TrafficIngressRequestDto;
@@ -39,7 +39,7 @@ class UserEquipmentTest {
   private static final int TASK_SIZE = Instancio.create(Integer.class);
   private static final int TASK_DELAY = Instancio.create(Integer.class);
 
-  @Mock private Communicator communicator;
+  @Mock private ClientCommunicator communicator;
   private UserEquipment userEquipment;
 
   private static void verifyTrafficIngress(
@@ -59,7 +59,7 @@ class UserEquipmentTest {
     final TaskGenerator taskGenerator = new TaskGenerator(sizeDist, delayDist);
     this.userEquipment =
         new UserEquipment(
-            new Position(X_START, Y_START), communicator, mobilityDist, taskGenerator);
+            communicator, new Position(X_START, Y_START), mobilityDist, taskGenerator);
   }
 
   @Test

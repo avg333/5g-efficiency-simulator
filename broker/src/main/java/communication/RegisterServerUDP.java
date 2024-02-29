@@ -30,7 +30,7 @@ public class RegisterServerUDP extends RegisterServer {
         sc.receive(dp);
         final InetAddress ad = dp.getAddress();
         final int portEntity = dp.getPort();
-        final Communicator communicator = new CommunicatorUDP(sc, ad, portEntity);
+        final BaseClientCommunicator communicator = new ClientCommunicatorUDP(sc, ad, portEntity);
         final Dto dto = dtoFactory.createDto(dp.getData());
 
         if (processDto(dto, communicator)) {
@@ -45,7 +45,7 @@ public class RegisterServerUDP extends RegisterServer {
 
   @Override
   protected void sendCloseMsgToServer(final Dto dto) {
-    new CommunicatorUDP(LOCALHOST, port).sendMessage(dto);
+    new ClientCommunicatorUDP(LOCALHOST, port).sendMessage(dto);
   }
 
   @Override

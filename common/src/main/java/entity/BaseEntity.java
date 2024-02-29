@@ -1,22 +1,25 @@
 package entity;
 
-import communication.Communicator;
+import communication.BaseClient;
+import communication.ClientCommunicator;
+import communication.model.RegisterRequestDto;
 import communication.model.base.Dto;
 import communication.model.base.DtoIdentifier;
 import domain.Position;
 import exception.NotSupportedActionException;
 import java.util.stream.Stream;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import types.EntityType;
 
 @Slf4j
-@RequiredArgsConstructor
-public abstract class BaseEntity implements Runnable {
+public abstract class BaseEntity extends BaseClient implements Runnable {
 
   protected final Position position;
 
-  private final Communicator communicator;
+  protected BaseEntity(EntityType type, ClientCommunicator communicator, Position position) {
+    super(type, communicator);
+    this.position = position;
+  }
 
   protected static int getMaxMsgLen(final DtoIdentifier... actions) {
     return Stream.of(actions).mapToInt(DtoIdentifier::getSize).max().orElse(0);
@@ -30,10 +33,10 @@ public abstract class BaseEntity implements Runnable {
 
   @Override
   public final void run() {
-    communicator.register(getEntityType(), position);
+    register(new RegisterRequestDto(getEntityType(), position.getX(), position.getY()));
 
     while (true) {
-      final Dto dto = communicator.receiveMessage(getMsgLen());
+      final Dto dto = receiveMessage(getMsgLen());
 
       final DtoIdentifier action = dto.getIdentifier();
       log.debug("Received request for {}", action);
@@ -42,16 +45,16 @@ public abstract class BaseEntity implements Runnable {
         break;
       }
 
-      communicator.sendMessage(processAction(dto));
+      sendMessage(processAction(dto));
     }
 
-    communicator.close();
+    close();
     log.info("Execution completed");
   }
 
   protected final Dto processNotSupportedAction(final Dto dto) {
     log.error("Type {} not supported. Execution completed", dto.getIdentifier());
-    communicator.close();
+    close();
     throw new NotSupportedActionException(dto);
   }
 }
