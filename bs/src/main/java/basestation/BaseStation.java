@@ -53,6 +53,11 @@ public class BaseStation extends BaseEntity {
       final BaseStationConfig baseStationConfig) {
     super(TYPE, communicator, position);
     this.baseStationConfig = baseStationConfig;
+    log.info(
+        "BaseStation created with communicator: {}, position: {}, baseStationConfig: {}",
+        communicator,
+        position,
+        baseStationConfig);
   }
 
   public static void main(final String[] args) {

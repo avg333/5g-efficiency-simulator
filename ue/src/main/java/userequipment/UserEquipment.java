@@ -33,6 +33,12 @@ public class UserEquipment extends BaseEntity {
     super(TYPE, communicator, position);
     this.mobilityDist = mobilityDist;
     this.taskGenerator = taskGenerator;
+    log.info(
+        "UserEquipment created with communicator: {}, position: {}, mobilityDist: {}, taskGenerator: {}",
+        communicator,
+        position,
+        mobilityDist,
+        taskGenerator);
   }
 
   public static void main(final String[] args) {

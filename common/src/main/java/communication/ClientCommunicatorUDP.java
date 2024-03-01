@@ -75,6 +75,6 @@ public class ClientCommunicatorUDP extends BaseClientCommunicator {
 
   @Override
   public String toString() {
-    return "ad=" + ad.getHostAddress() + ", port=" + portBroker;
+    return "CommunicatorUDP(address=" + ad.getHostAddress() + ", port=" + portBroker + ")";
   }
 }

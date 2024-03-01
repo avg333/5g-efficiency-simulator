@@ -2,7 +2,9 @@ package task;
 
 import distribution.Distribution;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
+@ToString
 @RequiredArgsConstructor
 public class TaskGenerator {
 

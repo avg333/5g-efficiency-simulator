@@ -63,9 +63,10 @@ public class ClientCommunicatorTCP extends BaseClientCommunicator {
 
   @Override
   public String toString() {
-    return "ad="
+    return "CommunicatorTCP(address="
         + clientSocket.getInetAddress().getHostAddress()
         + ", port="
-        + clientSocket.getPort();
+        + clientSocket.getPort()
+        + ")";
   }
 }

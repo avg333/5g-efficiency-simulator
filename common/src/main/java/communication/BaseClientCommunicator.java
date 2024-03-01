@@ -50,8 +50,6 @@ public abstract class BaseClientCommunicator implements ClientCommunicator {
     }
   }
 
-  public abstract void close();
-
   protected abstract void send(byte[] message) throws IOException;
 
   protected abstract byte[] receive(int dataLen) throws IOException;

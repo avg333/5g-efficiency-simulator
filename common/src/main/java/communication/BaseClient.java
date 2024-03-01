@@ -12,19 +12,15 @@ public abstract class BaseClient {
   @Getter private final EntityType type;
   private final ClientCommunicator communicator;
 
-  protected final void register(RegisterRequestDto dto) {
+  protected final void register(final RegisterRequestDto dto) {
     communicator.register(dto);
   }
 
-  protected final Dto communicate(Dto dto, int dataLen) {
-    return communicator.communicate(dto, dataLen);
-  }
-
-  protected final Dto receiveMessage(int dataLen) {
+  protected final Dto receiveMessage(final int dataLen) {
     return communicator.receiveMessage(dataLen);
   }
 
-  protected final void sendMessage(Dto dto) {
+  protected final void sendMessage(final Dto dto) {
     communicator.sendMessage(dto);
   }
 
