@@ -3,7 +3,11 @@ package basestation;
 import static communication.model.base.DtoIdentifier.NEW_STATE_RESPONSE;
 import static communication.model.base.DtoIdentifier.TRAFFIC_ARRIVAL_REQUEST;
 import static communication.model.base.DtoIdentifier.TRAFFIC_EGRESS_REQUEST;
-import static java.util.Objects.isNull;
+import static types.BsStateType.HYSTERESIS;
+import static types.BsStateType.OFF;
+import static types.BsStateType.ON;
+import static types.BsStateType.TO_OFF;
+import static types.BsStateType.TO_ON;
 import static types.Constants.NO_NEXT_STATE;
 import static types.Constants.NO_TASK_TO_PROCESS;
 import static types.EntityType.BASE_STATION;
@@ -18,13 +22,12 @@ import communication.model.TrafficEgressResponseDto;
 import communication.model.base.Dto;
 import domain.Position;
 import entity.BaseEntity;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import task.Task;
 import types.BsStateType;
 import types.EntityType;
+import utils.BaseStationUtils;
 
 @Slf4j
 public class BaseStation extends BaseEntity {
@@ -34,18 +37,13 @@ public class BaseStation extends BaseEntity {
   private static final int TIME_TO_ENTER_HYSTERESIS = 0;
   private static final int TIME_TO_EXIT_HYSTERESIS = 0;
   private static final int TIME_TO_SUSPEND = 0;
-  private static final BsStateType DEFAULT_NEXT_STATE = BsStateType.OFF;
 
   private static final int MSG_LEN =
       getMaxMsgLen(TRAFFIC_ARRIVAL_REQUEST, TRAFFIC_EGRESS_REQUEST, NEW_STATE_RESPONSE);
 
   private final BaseStationConfig baseStationConfig;
 
-  private final Deque<Task> tasksPending = new ArrayDeque<>();
-  private BsStateType state = DEFAULT_NEXT_STATE;
-  private BsStateType nextState = DEFAULT_NEXT_STATE;
-  private Task currentTask = null;
-  private double lastTaskArrivalTime = 0.0;
+  private final BaseStationState state = new BaseStationState();
 
   public BaseStation(
       final ClientCommunicator communicator,
@@ -96,18 +94,14 @@ public class BaseStation extends BaseEntity {
         new Task(request.getTaskId(), request.getTaskSize(), request.getTaskTArrivalTime());
     log.debug("Received task {}", task);
 
-    tasksPending.addLast(task);
+    final double a = state.addTask(task);
 
     final double tNewState = decideActivationAndScheduleIfPossible();
 
     final double tTrafficEgress = startProcessingTaskIfPossible();
 
-    final double q = getQ();
-    final double a = getA(task.tArrivalTime());
-
-    lastTaskArrivalTime = task.tArrivalTime();
-
-    return new TrafficArrivalResponseDto(q, state, tTrafficEgress, tNewState, nextState, a);
+    return new TrafficArrivalResponseDto(
+        state.getQ(), state.getState(), tTrafficEgress, tNewState, state.getNextState(), a);
   }
 
   /*
@@ -119,22 +113,23 @@ public class BaseStation extends BaseEntity {
    */
   protected Dto processTrafficEgress(final TrafficEgressRequestDto request) {
     final double currentT = request.getT();
-    log.debug("Processed task {} at {}", currentTask, currentT);
+    final Task processedTask = state.processCurrentTask();
 
-    final long id = currentTask.id();
-    final double size = currentTask.size();
-    final double w = getW(currentT);
-
-    currentTask = null;
+    log.debug("Processed task {} at {}", processedTask, currentT);
 
     final double tNewState = decideSuspensionAndScheduleIfPossible();
 
     final double tTrafficEgress = startProcessingTaskIfPossible();
 
-    final double q = getQ();
-
     return new TrafficEgressResponseDto(
-        q, state, tTrafficEgress, tNewState, nextState, w, id, size);
+        state.getQ(),
+        state.getState(),
+        tTrafficEgress,
+        tNewState,
+        state.getNextState(),
+        BaseStationUtils.calculateW(currentT, processedTask, baseStationConfig.c()),
+        processedTask.id(),
+        processedTask.size());
   }
 
   /*
@@ -152,33 +147,25 @@ public class BaseStation extends BaseEntity {
 
     final double tTrafficEgress = startProcessingTaskIfPossible();
 
-    final double q = getQ();
-
-    return new NewStateResponseDto(q, stateReceived, tTrafficEgress, tNewState, nextState);
+    return new NewStateResponseDto(
+        state.getQ(), stateReceived, tTrafficEgress, tNewState, state.getNextState());
   }
 
   private double startProcessingTaskIfPossible() {
-    final boolean isNotProcessingTask = isNull(currentTask);
-    final boolean existsTaskToProcess = !tasksPending.isEmpty();
-    final boolean bsIsActive = state == BsStateType.ON;
-
-    if (isNotProcessingTask && existsTaskToProcess && bsIsActive) {
-      currentTask = tasksPending.removeFirst();
-      return currentTask.size() / baseStationConfig.c();
+    if (state.isIdle() && state.hasTasksPending() && state.isCurrentState(ON)) {
+      return state.processNextTask().size() / baseStationConfig.c();
     }
 
     return NO_TASK_TO_PROCESS.getValue();
   }
 
   private double decideActivationAndScheduleIfPossible() {
-    final boolean existsTaskToProcess = !tasksPending.isEmpty();
-    final boolean bsIsOnHysteresis = state == BsStateType.HYSTERESIS;
-    final boolean bsIsNotOff = state != BsStateType.OFF;
+    final boolean existsTaskToProcess = state.hasTasksPending();
 
-    if (existsTaskToProcess && bsIsOnHysteresis) {
-      nextState = BsStateType.ON;
+    if (existsTaskToProcess && state.isCurrentState(HYSTERESIS)) {
+      state.setNextState(ON);
       return TIME_TO_EXIT_HYSTERESIS;
-    } else if (bsIsNotOff) {
+    } else if (!state.isCurrentState(OFF)) {
       return NO_NEXT_STATE.getValue();
     }
 
@@ -187,13 +174,13 @@ public class BaseStation extends BaseEntity {
       return NO_NEXT_STATE.getValue();
     }
 
-    nextState = candidateNextState.get();
+    state.setNextState(candidateNextState.get());
     return TIME_TO_SUSPEND;
   }
 
   private Optional<BsStateType> getNextActiveState(final boolean existsTaskToProcess) {
     return switch (baseStationConfig.mode()) {
-      case NO_COALESCING -> existsTaskToProcess ? Optional.of(BsStateType.TO_ON) : Optional.empty();
+      case NO_COALESCING -> existsTaskToProcess ? Optional.of(TO_ON) : Optional.empty();
       case SIZE_BASED_COALESCING -> activationSizeBasedCoalescing();
       case TIME_BASED_COALESCING ->
           existsTaskToProcess ? Optional.of(BsStateType.WAITING_TO_ON) : Optional.empty();
@@ -202,8 +189,9 @@ public class BaseStation extends BaseEntity {
   }
 
   private Optional<BsStateType> activationSizeBasedCoalescing() {
-    final boolean taskSizeIsGreaterThanAlgorithmParam = getQ() > baseStationConfig.algorithmParam();
-    return taskSizeIsGreaterThanAlgorithmParam ? Optional.of(BsStateType.TO_ON) : Optional.empty();
+    return state.getQ() > baseStationConfig.algorithmParam()
+        ? Optional.of(TO_ON)
+        : Optional.empty();
   }
 
   private Optional<BsStateType> activationFixedCoalescing(final boolean existsTaskToProcess) {
@@ -213,12 +201,8 @@ public class BaseStation extends BaseEntity {
   }
 
   private double decideSuspensionAndScheduleIfPossible() {
-    final boolean isNotProcessingTask = isNull(currentTask);
-    final boolean notExistsTaskToProcess = tasksPending.isEmpty();
-    final boolean bsIsActive = state == BsStateType.ON;
-
-    if (isNotProcessingTask && notExistsTaskToProcess && bsIsActive) {
-      nextState = BsStateType.HYSTERESIS;
+    if (state.isIdle() && !state.hasTasksPending() && state.isCurrentState(ON)) {
+      state.setNextState(BsStateType.HYSTERESIS);
       return TIME_TO_ENTER_HYSTERESIS;
     }
 
@@ -229,46 +213,30 @@ public class BaseStation extends BaseEntity {
     double tNewState = NO_NEXT_STATE.getValue();
 
     switch (stateReceived) {
-      case ON, OFF -> state = stateReceived;
+      case ON, OFF -> state.setState(stateReceived);
       case TO_ON -> {
-        state = stateReceived;
-        nextState = BsStateType.ON;
+        state.setState(stateReceived);
+        state.setNextState(ON);
         tNewState = baseStationConfig.tToOn();
       }
       case TO_OFF -> {
-        if (state == BsStateType.HYSTERESIS) {
-          state = stateReceived;
-          nextState = BsStateType.OFF;
+        if (state.isCurrentState(HYSTERESIS)) {
+          state.setState(stateReceived);
+          state.setNextState(OFF);
           tNewState = baseStationConfig.tToOff();
         }
       }
       case WAITING_TO_ON -> {
-        state = stateReceived;
-        nextState = BsStateType.TO_ON;
+        state.setState(stateReceived);
+        state.setNextState(TO_ON);
         tNewState = baseStationConfig.algorithmParam();
       }
       case HYSTERESIS -> {
-        state = stateReceived;
-        nextState = BsStateType.TO_OFF;
+        state.setState(stateReceived);
+        state.setNextState(TO_OFF);
         tNewState = baseStationConfig.tHysteresis();
       }
     }
     return tNewState;
-  }
-
-  // Sum of the size of the tasks pending
-  private double getQ() {
-    // TODO Add q sum to avoid recalculation
-    return tasksPending.stream().mapToDouble(Task::size).sum();
-  }
-
-  // Time since the last task arrived
-  private double getA(final double currentT) {
-    return currentT - lastTaskArrivalTime;
-  }
-
-  // TODO Explain this function
-  private double getW(final double currentT) {
-    return currentT - currentTask.tArrivalTime() - currentTask.size() / baseStationConfig.c();
   }
 }
