@@ -25,10 +25,8 @@ import domain.EventType;
 import domain.Position;
 import domain.Task;
 import domain.entities.Bs;
-import domain.entities.Entity;
 import domain.entities.Ue;
 import exception.InvalidEventTypeException;
-import java.util.*;
 import loggers.LoggerCustom;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,58 +42,39 @@ public class Broker implements Runnable {
   private final BsRouter bsRouter;
   private final double tFinal;
   private final LoggerCustom loggerCustom;
-  private final PriorityQueue<Event> eventQueue =
-      new PriorityQueue<>(Comparator.comparing(Event::t));
-  private List<Bs> bsList;
-  private List<Ue> ueList;
-  private double t = 0;
+  private BrokerState state;
 
-  public static void main(String[] args) {
+  public static void main(final String[] args) {
     new Thread(new BrokerFactory().createBroker()).start();
   }
 
   @Override
   public void run() {
-    processEntities(server.getEntities());
+    state = new BrokerState(server.getEntities());
 
     final long start = System.currentTimeMillis();
     try (final ProgressBar pb = new ProgressBar("Simulating", (long) tFinal)) {
-      while (t <= tFinal) {
-        final Event event = eventQueue.poll();
-        if (event == null) {
-          log.warn("Event queue is empty. Simulation finished at t={}", t);
-          break;
-        }
-        processEvent(event);
-        pb.stepTo((long) t);
+      while (state.getT() <= tFinal) {
+        processEvent(state.pollNextElement());
+        pb.stepTo((long) state.getT());
       }
       pb.stepTo((long) tFinal);
     }
     final long finish = System.currentTimeMillis();
 
     server.closeSockets();
-    loggerCustom.printResults(finish - start, t, bsList, ueList);
-  }
-
-  private void processEntities(final List<Entity> entities) {
-    bsList = entities.stream().filter(Bs.class::isInstance).map(Bs.class::cast).toList();
-    ueList = entities.stream().filter(Ue.class::isInstance).map(Ue.class::cast).toList();
-    bsList.forEach(bs -> eventQueue.add(createNewEvent(t, NEW_STATE, bs)));
-    ueList.forEach(ue -> eventQueue.add(createNewEvent(t, EventType.TRAFFIC_INGRESS, ue)));
+    loggerCustom.printResults(finish - start, state.getT(), state.getBsList(), state.getUeList());
   }
 
   private void processEvent(final Event event) {
-    t = event.t();
-    final EventType type = event.type();
-
-    switch (type) {
+    switch (event.type()) {
       case TRAFFIC_INGRESS -> processTrafficIngress(event);
       case TRAFFIC_EGRESS -> processTrafficEgress(event);
       case NEW_STATE -> processNewState(event);
       default -> {
-        log.error("Type {} not supported. Execution completed", type);
+        log.error("Type {} not supported. Execution completed", event.type());
         server.closeSockets();
-        throw new InvalidEventTypeException(type);
+        throw new InvalidEventTypeException(event.type());
       }
     }
   }
@@ -111,9 +90,10 @@ public class Broker implements Runnable {
         (TrafficIngressResponseDto)
             ue.communicate(new TrafficIngressRequestDto(), TRAFFIC_INGRESS_RESPONSE.getSize());
 
-    final Task task = createNewTask(dto.getSize(), t, dto.getTUntilNextTask());
+    final Task task = createNewTask(dto.getSize(), state.getT(), dto.getTUntilNextTask());
 
-    eventQueue.add(createNewEvent(t + task.tUntilNextTask(), EventType.TRAFFIC_INGRESS, ue));
+    state.addEvent(
+        createNewEvent(state.getT() + task.tUntilNextTask(), EventType.TRAFFIC_INGRESS, ue));
 
     if (task.isEmpty()) {
       return;
@@ -121,7 +101,7 @@ public class Broker implements Runnable {
 
     ue.addTask(new Position(dto.getX(), dto.getY()), task);
 
-    loggerCustom.logTrafficIngress(t, ue, task);
+    loggerCustom.logTrafficIngress(state.getT(), ue, task);
 
     final Bs bs = processTrafficRoute(ue, task);
 
@@ -132,8 +112,8 @@ public class Broker implements Runnable {
    * Choose the best BS to send the task from the UE, returning the chosen BS and logging the event.
    */
   protected Bs processTrafficRoute(final Ue ue, final Task task) {
-    final Bs bs = bsRouter.getBs(ue, bsList);
-    loggerCustom.logTrafficRoute(t, ue, bs, task);
+    final Bs bs = bsRouter.getBs(ue, state.getBsList());
+    loggerCustom.logTrafficRoute(state.getT(), ue, bs, task);
     return bs;
   }
 
@@ -144,28 +124,27 @@ public class Broker implements Runnable {
                 new TrafficArrivalRequestDto(task.id(), task.size(), task.tArrivalTime()),
                 TRAFFIC_ARRIVAL_RESPONSE.getSize());
 
-    final BsStateType state = responseTA.getState();
-    final BsStateType nextState = responseTA.getNextState();
+    final BsStateType bsState = responseTA.getState();
+    final BsStateType bsNextState = responseTA.getNextState();
     final double q = responseTA.getQ();
     final double tTrafficEgress = responseTA.getTTrafficEgress();
     final double tNewState = responseTA.getTNewState();
     final double a = responseTA.getA();
 
-    loggerCustom.logTrafficArrival(t, bs, task, q, a);
+    loggerCustom.logTrafficArrival(state.getT(), bs, task, q, a);
 
     if (bs.getState() == BsStateType.HYSTERESIS) {
-      // How often does this happen?
-      loggerCustom.logNewState(t, bs, q, state);
-      eventQueue.removeIf(event -> event.id() == bs.getIdEventNextState());
-    } else if (state != bs.getState()) {
-      loggerCustom.logNewState(t, bs, q, state);
+      loggerCustom.logNewState(state.getT(), bs, q, bsState);
+      state.removeEventById(bs.getIdEventNextState()); // How often does this happen?
+    } else if (bsState != bs.getState()) {
+      loggerCustom.logNewState(state.getT(), bs, q, bsState);
     }
 
-    createNewStateEventIfNecessary(bs, tNewState, nextState);
+    createNewStateEventIfNecessary(bs, tNewState, bsNextState);
     createTrafficEgressEventIfNecessary(bs, tTrafficEgress);
 
-    bs.addQ(q, t);
-    bs.setState(state);
+    bs.addQ(q, state.getT());
+    bs.setState(bsState);
   }
 
   private void processTrafficEgress(final Event event) {
@@ -173,10 +152,11 @@ public class Broker implements Runnable {
 
     final TrafficEgressResponseDto responseTE =
         (TrafficEgressResponseDto)
-            bs.communicate(new TrafficEgressRequestDto(t), TRAFFIC_EGRESS_RESPONSE.getSize());
+            bs.communicate(
+                new TrafficEgressRequestDto(state.getT()), TRAFFIC_EGRESS_RESPONSE.getSize());
 
-    final BsStateType state = responseTE.getState();
-    final BsStateType nextState = responseTE.getNextState();
+    final BsStateType bsState = responseTE.getState();
+    final BsStateType bsNextState = responseTE.getNextState();
     final double q = responseTE.getQ();
     final double tTrafficEgress = responseTE.getTTrafficEgress();
     final double tNewState = responseTE.getTNewState();
@@ -184,18 +164,18 @@ public class Broker implements Runnable {
     final double size = responseTE.getSize();
     final double w = responseTE.getW();
 
-    loggerCustom.logTrafficEgress(t, bs, id, size, q, w);
+    loggerCustom.logTrafficEgress(state.getT(), bs, id, size, q, w);
 
-    if (state != bs.getState()) {
-      loggerCustom.logNewState(t, bs, q, state);
+    if (bsState != bs.getState()) {
+      loggerCustom.logNewState(state.getT(), bs, q, bsState);
     }
 
-    createNewStateEventIfNecessary(bs, tNewState, nextState);
+    createNewStateEventIfNecessary(bs, tNewState, bsNextState);
     createTrafficEgressEventIfNecessary(bs, tTrafficEgress);
 
-    bs.addQ(q, t);
+    bs.addQ(q, state.getT());
     bs.addW(w);
-    bs.setState(state);
+    bs.setState(bsState);
   }
 
   private void processNewState(final Event event) {
@@ -206,27 +186,27 @@ public class Broker implements Runnable {
             bs.communicate(
                 new NewStateRequestDto(bs.getNextStateBs()), NEW_STATE_RESPONSE.getSize());
 
-    final BsStateType state = responseNS.getStateReceived();
-    final BsStateType nextState = responseNS.getNextState();
+    final BsStateType bsState = responseNS.getStateReceived();
+    final BsStateType bsNextState = responseNS.getNextState();
     final double q = responseNS.getQ();
     final double tTrafficEgress = responseNS.getTTrafficEgress();
     final double tNewState = responseNS.getTNewState();
 
-    if (state != bs.getState()) {
-      loggerCustom.logNewState(t, bs, q, state);
+    if (bsState != bs.getState()) {
+      loggerCustom.logNewState(state.getT(), bs, q, bsState);
     }
 
-    createNewStateEventIfNecessary(bs, tNewState, nextState);
+    createNewStateEventIfNecessary(bs, tNewState, bsNextState);
     createTrafficEgressEventIfNecessary(bs, tTrafficEgress);
 
-    bs.setState(state);
+    bs.setState(bsState);
   }
 
   private void createNewStateEventIfNecessary(
       final Bs bs, final double tNewState, final BsStateType nextState) {
     if (tNewState != NO_NEXT_STATE.getValue()) {
-      final Event newState = createNewEvent(t + tNewState, NEW_STATE, bs);
-      eventQueue.add(newState);
+      final Event newState = createNewEvent(state.getT() + tNewState, NEW_STATE, bs);
+      state.addEvent(newState);
       bs.setNextStateBs(nextState);
       bs.setIdEventNextState(newState.id());
     }
@@ -234,7 +214,7 @@ public class Broker implements Runnable {
 
   private void createTrafficEgressEventIfNecessary(final Bs bs, final double tTrafficEgress) {
     if (tTrafficEgress != NO_TASK_TO_PROCESS.getValue()) {
-      eventQueue.add(createNewEvent(t + tTrafficEgress, TRAFFIC_EGRESS, bs));
+      state.addEvent(createNewEvent(state.getT() + tTrafficEgress, TRAFFIC_EGRESS, bs));
     }
   }
 }
