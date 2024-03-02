@@ -22,14 +22,12 @@ import types.EntityType;
 @Slf4j
 public class LoggerCustom {
 
-  private static final int ADVANCE = 1;
   private static final String[] COLUMNS = {
     "T", "ENTITY", "ID", "EVENT", "TASK", "L", "A", "X", "Y", "FROM-UE", "TO-BS", "Q", "W", "STATE"
   };
 
   private final boolean printCsv;
   private final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
-  private int aux = ADVANCE;
   private FileWriter out;
   private CSVPrinter printer;
 
@@ -212,15 +210,15 @@ public class LoggerCustom {
     }
   }
 
-  public void logTrafficEgress(
-      double t, int idBs, long idTask, double size, double q, double wait) {
-    log.debug("{} BS {} TRAFFIC_EGRESS id={} size={} q={} wait={}", t, idBs, idTask, size, q, wait);
+  public void logTrafficEgress(double t, Bs bs, long idTask, double size, double q, double wait) {
+    log.debug(
+        "{} BS {} TRAFFIC_EGRESS id={} size={} q={} wait={}", t, bs.getId(), idTask, size, q, wait);
     if (printCsv) {
       try {
         printer.printRecord(
             t,
             EntityType.BASE_STATION,
-            idBs,
+            bs.getId(),
             EventType.TRAFFIC_EGRESS,
             idTask,
             size,

@@ -1,17 +1,11 @@
 package domain;
 
 import domain.entities.Entity;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
-@Getter
-@RequiredArgsConstructor
-public class Event {
+public record Event(long id, double t, EventType type, Entity entity) {
+  private static long eventCounter = 0;
 
-  private static long totalEvents = 0;
-
-  private final long id = totalEvents++;
-  private final double t;
-  private final EventType type;
-  private final Entity entity;
+  public static Event createNewEvent(double t, EventType type, Entity entity) {
+    return new Event(eventCounter++, t, type, entity);
+  }
 }
