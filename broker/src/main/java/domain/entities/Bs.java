@@ -1,6 +1,5 @@
 package domain.entities;
 
-import communication.BaseClientCommunicator;
 import communication.ClientCommunicator;
 import domain.Position;
 import lombok.Getter;

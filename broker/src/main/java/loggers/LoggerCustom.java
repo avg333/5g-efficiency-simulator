@@ -119,8 +119,8 @@ public class LoggerCustom {
         task.id(),
         task.size(),
         task.tUntilNextTask(),
-        ue.getPosition().getX(),
-        ue.getPosition().getY());
+        ue.getPosition().x(),
+        ue.getPosition().y());
     if (printCsv) {
       try {
         printer.printRecord(
@@ -131,8 +131,8 @@ public class LoggerCustom {
             task.id(),
             task.size(),
             task.tUntilNextTask(),
-            ue.getPosition().getX(),
-            ue.getPosition().getY(),
+            ue.getPosition().x(),
+            ue.getPosition().y(),
             null,
             null,
             null,

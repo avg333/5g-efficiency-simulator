@@ -16,8 +16,8 @@ public record BsRouter(RoutingAlgorithmMode mode) {
   }
 
   private static double getDistance(final Position positionUe, final Position positionBs) {
-    final double leg1 = positionUe.getX() - positionBs.getX();
-    final double leg2 = positionUe.getY() - positionBs.getY();
+    final double leg1 = positionUe.x() - positionBs.x();
+    final double leg2 = positionUe.y() - positionBs.y();
     return leg1 * leg1 + leg2 * leg2;
     // Technically, the distance is the square root of the sum of the squares of the legs
     // But we don't need to calculate the square root, because we only need to compare distances
