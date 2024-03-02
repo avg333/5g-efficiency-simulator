@@ -10,23 +10,23 @@ public class Ue extends Entity {
   private double eA = 0.0;
   private long taskCounter = 0;
 
-  public Ue(Position position, ClientCommunicator communicator) {
+  public Ue(final ClientCommunicator communicator, final Position position) {
     super(communicator);
     this.position = position;
   }
 
-  public void addTask(final Position position, final Task task) {
+  public final void addTask(final Task task, final Position position) {
     this.position = position;
     eL += task.size();
     eA += task.tUntilNextTask();
     taskCounter++;
   }
 
-  public double geteL() {
+  public final double geteL() {
     return taskCounter != 0 ? (eL / taskCounter) : 0;
   }
 
-  public double geteA() {
+  public final double geteA() {
     return taskCounter != 0 ? (eA / taskCounter) : 0;
   }
 }

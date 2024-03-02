@@ -99,7 +99,7 @@ public class Broker implements Runnable {
       return;
     }
 
-    ue.addTask(new Position(dto.getX(), dto.getY()), task);
+    ue.addTask(task, new Position(dto.getX(), dto.getY()));
 
     loggerCustom.logTrafficIngress(state.getT(), ue, task);
 
@@ -207,8 +207,7 @@ public class Broker implements Runnable {
     if (tNewState != NO_NEXT_STATE.getValue()) {
       final Event newState = createNewEvent(state.getT() + tNewState, NEW_STATE, bs);
       state.addEvent(newState);
-      bs.setNextStateBs(nextState);
-      bs.setIdEventNextState(newState.id());
+      bs.setNextStateBs(nextState, newState.id());
     }
   }
 

@@ -96,14 +96,14 @@ public abstract class RegisterServer {
   }
 
   private void registerBs(final Position position, final ClientCommunicator communicator) {
-    final Bs bs = new Bs(position, communicator);
+    final Bs bs = new Bs(communicator, position);
     entities.add(bs);
     communicator.sendMessage(new RegisterResponseDto(bs.getId()));
     log.info("BS [id={}] {}", bs.getId(), communicator);
   }
 
   private void registerUe(final Position position, final ClientCommunicator communicator) {
-    final Ue ue = new Ue(position, communicator);
+    final Ue ue = new Ue(communicator, position);
     entities.add(ue);
     communicator.sendMessage(new RegisterResponseDto(ue.getId()));
     log.info("UE [id={}] {}", ue.getId(), communicator);

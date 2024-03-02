@@ -12,18 +12,18 @@ import lombok.RequiredArgsConstructor;
 public abstract class Entity {
 
   private static int idCounter = 1;
+  @Getter private final int id = idCounter++;
 
   private final ClientCommunicator communicator;
-  @Getter private final int id = idCounter++;
 
   @Getter protected Position position;
 
-  public Dto communicate(final Dto dto, final int msgLen) {
+  public final Dto communicate(final Dto dto, final int msgLen) {
     // TODO Obtains the response length from the request
     return communicator.communicate(dto, msgLen);
   }
 
-  public void closeSocket() {
+  public final void closeSocket() {
     communicator.sendMessage(new CloseEntityDto());
   }
 }
