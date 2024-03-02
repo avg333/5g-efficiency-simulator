@@ -1,5 +1,8 @@
 package communication.model;
 
+import static types.Constants.NO_NEXT_STATE;
+import static types.Constants.NO_TASK_TO_PROCESS;
+
 import communication.model.base.Dto;
 import communication.model.base.DtoIdentifier;
 import java.io.IOException;
@@ -13,45 +16,61 @@ public class NewStateResponseDto extends Dto {
 
   public static final DtoIdentifier IDENTIFIER = DtoIdentifier.NEW_STATE_RESPONSE;
 
-  private final double q;
-
   private final BsStateType stateReceived;
-
-  private final double tTrafficEgress;
-
-  private final double tNewState;
 
   private final BsStateType nextState;
 
+  private final double q;
+
+  private final boolean isTrafficEgress;
+
+  private final double tTrafficEgress;
+
+  private final boolean isNewState;
+
+  private final double tNewState;
+
   public NewStateResponseDto(
-      final double q,
       final BsStateType stateReceived,
+      final BsStateType nextState,
+      final double q,
       final double tTrafficEgress,
-      final double tNewState,
-      final BsStateType nextState) {
+      final double tNewState) {
     super(IDENTIFIER);
-    this.q = q;
     this.stateReceived = stateReceived;
-    this.tTrafficEgress = tTrafficEgress;
-    this.tNewState = tNewState;
     this.nextState = nextState;
+    this.q = q;
+    this.isTrafficEgress = NO_TASK_TO_PROCESS.getValue() != tTrafficEgress;
+    this.tTrafficEgress = this.isTrafficEgress ? tTrafficEgress : NO_TASK_TO_PROCESS.getValue();
+    this.isNewState = NO_NEXT_STATE.getValue() != tNewState;
+    this.tNewState = this.isNewState ? tNewState : NO_NEXT_STATE.getValue();
   }
 
   public NewStateResponseDto(final MessageUnpacker messageUnpacker) throws IOException {
     this(
-        messageUnpacker.unpackDouble(),
+        BsStateType.fromCode(messageUnpacker.unpackByte()),
         BsStateType.fromCode(messageUnpacker.unpackByte()),
         messageUnpacker.unpackDouble(),
-        messageUnpacker.unpackDouble(),
-        BsStateType.fromCode(messageUnpacker.unpackByte()));
+        messageUnpacker.unpackBoolean()
+            ? messageUnpacker.unpackDouble()
+            : NO_TASK_TO_PROCESS.getValue(),
+        messageUnpacker.unpackBoolean()
+            ? messageUnpacker.unpackDouble()
+            : NO_NEXT_STATE.getValue());
   }
 
   @Override
   protected final void map(final MessageBufferPacker messageBufferPacker) throws IOException {
-    messageBufferPacker.packDouble(q);
     messageBufferPacker.packByte(stateReceived.getValue());
-    messageBufferPacker.packDouble(tTrafficEgress);
-    messageBufferPacker.packDouble(tNewState);
     messageBufferPacker.packByte(nextState.getValue());
+    messageBufferPacker.packDouble(q);
+    messageBufferPacker.packBoolean(isTrafficEgress);
+    if (isTrafficEgress) {
+      messageBufferPacker.packDouble(tTrafficEgress);
+    }
+    messageBufferPacker.packBoolean(isNewState);
+    if (isNewState) {
+      messageBufferPacker.packDouble(tNewState);
+    }
   }
 }

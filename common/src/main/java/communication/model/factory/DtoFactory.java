@@ -23,18 +23,18 @@ public class DtoFactory {
   public Dto createDto(final byte[] bytes) throws IOException {
     try (final MessageUnpacker messageUnpacker = MessagePack.newDefaultUnpacker(bytes)) {
       return switch (DtoIdentifier.fromCode(messageUnpacker.unpackByte())) {
-        case CLOSE_BROKER -> new CloseBrokerDto();
-        case CLOSE_ENTITY -> new CloseEntityDto();
-        case NEW_STATE_REQUEST -> new NewStateRequestDto(messageUnpacker);
-        case NEW_STATE_RESPONSE -> new NewStateResponseDto(messageUnpacker);
         case REGISTER_REQUEST -> new RegisterRequestDto(messageUnpacker);
         case REGISTER_RESPONSE -> new RegisterResponseDto(messageUnpacker);
+        case CLOSE_BROKER -> new CloseBrokerDto();
+        case CLOSE_ENTITY -> new CloseEntityDto();
+        case TRAFFIC_INGRESS_REQUEST -> new TrafficIngressRequestDto();
+        case TRAFFIC_INGRESS_RESPONSE -> new TrafficIngressResponseDto(messageUnpacker);
         case TRAFFIC_ARRIVAL_REQUEST -> new TrafficArrivalRequestDto(messageUnpacker);
         case TRAFFIC_ARRIVAL_RESPONSE -> new TrafficArrivalResponseDto(messageUnpacker);
         case TRAFFIC_EGRESS_REQUEST -> new TrafficEgressRequestDto(messageUnpacker);
         case TRAFFIC_EGRESS_RESPONSE -> new TrafficEgressResponseDto(messageUnpacker);
-        case TRAFFIC_INGRESS_REQUEST -> new TrafficIngressRequestDto();
-        case TRAFFIC_INGRESS_RESPONSE -> new TrafficIngressResponseDto(messageUnpacker);
+        case NEW_STATE_REQUEST -> new NewStateRequestDto(messageUnpacker);
+        case NEW_STATE_RESPONSE -> new NewStateResponseDto(messageUnpacker);
       };
     }
   }

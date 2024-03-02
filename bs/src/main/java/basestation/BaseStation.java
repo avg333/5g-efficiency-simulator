@@ -101,7 +101,7 @@ public class BaseStation extends BaseEntity {
     final double tTrafficEgress = startProcessingTaskIfPossible();
 
     return new TrafficArrivalResponseDto(
-        state.getQ(), state.getState(), tTrafficEgress, tNewState, state.getNextState(), a);
+        state.getState(), state.getNextState(), state.getQ(), tTrafficEgress, tNewState, a);
   }
 
   /*
@@ -122,14 +122,14 @@ public class BaseStation extends BaseEntity {
     final double tTrafficEgress = startProcessingTaskIfPossible();
 
     return new TrafficEgressResponseDto(
-        state.getQ(),
         state.getState(),
+        state.getNextState(),
+        state.getQ(),
         tTrafficEgress,
         tNewState,
-        state.getNextState(),
-        BaseStationUtils.calculateW(currentT, processedTask, baseStationConfig.c()),
         processedTask.id(),
-        processedTask.size());
+        processedTask.size(),
+        BaseStationUtils.calculateW(currentT, processedTask, baseStationConfig.c()));
   }
 
   /*
@@ -148,7 +148,7 @@ public class BaseStation extends BaseEntity {
     final double tTrafficEgress = startProcessingTaskIfPossible();
 
     return new NewStateResponseDto(
-        state.getQ(), stateReceived, tTrafficEgress, tNewState, state.getNextState());
+        stateReceived, state.getNextState(), state.getQ(), tTrafficEgress, tNewState);
   }
 
   private double startProcessingTaskIfPossible() {
