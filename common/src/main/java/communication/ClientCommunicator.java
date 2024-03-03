@@ -3,7 +3,7 @@ package communication;
 import communication.model.RegisterRequestDto;
 import communication.model.base.Dto;
 
-public interface ClientCommunicator {
+public interface ClientCommunicator extends AutoCloseable {
 
   void register(RegisterRequestDto dto);
 

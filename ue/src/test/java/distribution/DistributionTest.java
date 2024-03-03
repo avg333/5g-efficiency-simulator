@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.within;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 
+// TODO Improve tests
 class DistributionTest {
 
   private static final int NUM_TESTS = 1000;

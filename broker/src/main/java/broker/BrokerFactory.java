@@ -4,7 +4,6 @@ import communication.RegisterServer;
 import communication.RegisterServerTCP;
 import communication.RegisterServerUDP;
 import config.Config;
-import loggers.LoggerCustom;
 import routing.BsRouter;
 import routing.RoutingAlgorithmMode;
 
@@ -26,8 +25,6 @@ public class BrokerFactory {
     final RegisterServer server =
         (communicatorModeTCP) ? new RegisterServerTCP(port) : new RegisterServerUDP(port);
 
-    final LoggerCustom loggerCustom = new LoggerCustom(eventsLog);
-
-    return new Broker(server, bsRouter, tFinal, loggerCustom);
+    return new Broker(server, bsRouter, tFinal, eventsLog);
   }
 }

@@ -27,10 +27,14 @@ import domain.Task;
 import domain.entities.Bs;
 import domain.entities.Ue;
 import exception.InvalidEventTypeException;
-import loggers.LoggerCustom;
+import loggers.BrokerLogger;
+import loggers.model.NewStateDtoLog;
+import loggers.model.TrafficArrivalDtoLog;
+import loggers.model.TrafficEgressDtoLog;
+import loggers.model.TrafficIngressDtoLog;
+import loggers.model.TrafficRouteDtoLog;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import me.tongfei.progressbar.ProgressBar;
 import routing.BsRouter;
 import types.BsStateType;
 
@@ -41,7 +45,8 @@ public class Broker implements Runnable {
   private final RegisterServer server;
   private final BsRouter bsRouter;
   private final double tFinal;
-  private final LoggerCustom loggerCustom;
+  private final boolean printCsv;
+  private BrokerLogger brokerLogger;
   private BrokerState state;
 
   public static void main(final String[] args) {
@@ -51,19 +56,15 @@ public class Broker implements Runnable {
   @Override
   public void run() {
     state = new BrokerState(server.getEntities());
+    brokerLogger = new BrokerLogger(true, printCsv, true, tFinal, state);
 
-    final long start = System.currentTimeMillis();
-    try (final ProgressBar pb = new ProgressBar("Simulating", (long) tFinal)) {
-      while (state.getT() <= tFinal) {
-        processEvent(state.pollNextElement());
-        pb.stepTo((long) state.getT());
-      }
-      pb.stepTo((long) tFinal);
+    while (state.getT() <= tFinal) {
+      processEvent(state.pollNextElement());
+      brokerLogger.upgradeProgress(state.getT());
     }
-    final long finish = System.currentTimeMillis();
 
     server.closeSockets();
-    loggerCustom.printResults(finish - start, state.getT(), state.getBsList(), state.getUeList());
+    brokerLogger.close();
   }
 
   private void processEvent(final Event event) {
@@ -101,7 +102,7 @@ public class Broker implements Runnable {
 
     ue.addTask(task, new Position(dto.getX(), dto.getY()));
 
-    loggerCustom.logTrafficIngress(state.getT(), ue, task);
+    brokerLogger.log(new TrafficIngressDtoLog(state.getT(), ue, task));
 
     final Bs bs = processTrafficRoute(ue, task);
 
@@ -113,7 +114,7 @@ public class Broker implements Runnable {
    */
   protected Bs processTrafficRoute(final Ue ue, final Task task) {
     final Bs bs = bsRouter.getBs(ue, state.getBsList());
-    loggerCustom.logTrafficRoute(state.getT(), ue, bs, task);
+    brokerLogger.log(new TrafficRouteDtoLog(state.getT(), ue, bs, task));
     return bs;
   }
 
@@ -131,13 +132,13 @@ public class Broker implements Runnable {
     final double tNewState = responseTA.getTNewState();
     final double a = responseTA.getA();
 
-    loggerCustom.logTrafficArrival(state.getT(), bs, task, q, a);
+    brokerLogger.log(new TrafficArrivalDtoLog(state.getT(), bs, task, q, a));
 
     if (bs.getState() == BsStateType.HYSTERESIS) {
-      loggerCustom.logNewState(state.getT(), bs, q, bsState);
+      brokerLogger.log(new NewStateDtoLog(state.getT(), bs, q, bsState));
       state.removeEventById(bs.getIdEventNextState()); // How often does this happen?
     } else if (bsState != bs.getState()) {
-      loggerCustom.logNewState(state.getT(), bs, q, bsState);
+      brokerLogger.log(new NewStateDtoLog(state.getT(), bs, q, bsState));
     }
 
     createNewStateEventIfNecessary(bs, tNewState, bsNextState);
@@ -164,10 +165,10 @@ public class Broker implements Runnable {
     final double size = responseTE.getSize();
     final double w = responseTE.getW();
 
-    loggerCustom.logTrafficEgress(state.getT(), bs, id, size, q, w);
+    brokerLogger.log(new TrafficEgressDtoLog(state.getT(), bs, id, size, q, w));
 
     if (bsState != bs.getState()) {
-      loggerCustom.logNewState(state.getT(), bs, q, bsState);
+      brokerLogger.log(new NewStateDtoLog(state.getT(), bs, q, bsState));
     }
 
     createNewStateEventIfNecessary(bs, tNewState, bsNextState);
@@ -193,7 +194,7 @@ public class Broker implements Runnable {
     final double tNewState = responseNS.getTNewState();
 
     if (bsState != bs.getState()) {
-      loggerCustom.logNewState(state.getT(), bs, q, bsState);
+      brokerLogger.log(new NewStateDtoLog(state.getT(), bs, q, bsState));
     }
 
     createNewStateEventIfNecessary(bs, tNewState, bsNextState);
