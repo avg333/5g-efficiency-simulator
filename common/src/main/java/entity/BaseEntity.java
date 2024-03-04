@@ -16,8 +16,8 @@ public abstract class BaseEntity extends BaseClient implements Runnable {
 
   protected final Position position;
 
-  protected BaseEntity(EntityType type, ClientCommunicator communicator, Position position) {
-    super(type, communicator);
+  protected BaseEntity(ClientCommunicator communicator, Position position) {
+    super(communicator);
     this.position = position;
   }
 

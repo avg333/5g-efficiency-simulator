@@ -29,9 +29,9 @@ public class BrokerLogger implements AutoCloseable {
   @Override
   public void close() {
     final double executionTime = System.currentTimeMillis() - startTime;
-    log.info("End of simulation. Execution time: {}s", executionTime / 1000);
     resumePrinter.print(executionTime);
     progressBarLogger.close();
     eventLogger.close();
+    log.info("End of simulation. Execution time: {}s", executionTime / 1000);
   }
 }

@@ -2,14 +2,11 @@ package communication;
 
 import communication.model.RegisterRequestDto;
 import communication.model.base.Dto;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import types.EntityType;
 
 @RequiredArgsConstructor
 public abstract class BaseClient {
 
-  @Getter private final EntityType type;
   private final ClientCommunicator communicator;
 
   protected final void register(final RegisterRequestDto dto) {

@@ -49,7 +49,7 @@ public class BaseStation extends BaseEntity {
       final ClientCommunicator communicator,
       final Position position,
       final BaseStationConfig baseStationConfig) {
-    super(TYPE, communicator, position);
+    super(communicator, position);
     this.baseStationConfig = baseStationConfig;
     log.info(
         "BaseStation created with communicator: {}, position: {}, baseStationConfig: {}",
@@ -69,7 +69,7 @@ public class BaseStation extends BaseEntity {
 
   @Override
   protected final EntityType getEntityType() {
-    return BASE_STATION;
+    return TYPE;
   }
 
   @Override

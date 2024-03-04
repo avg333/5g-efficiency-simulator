@@ -30,7 +30,7 @@ public class UserEquipment extends BaseEntity {
       final Position position,
       final Distribution mobilityDist,
       final TaskGenerator taskGenerator) {
-    super(TYPE, communicator, position);
+    super(communicator, position);
     this.mobilityDist = mobilityDist;
     this.taskGenerator = taskGenerator;
     log.info(
@@ -52,7 +52,7 @@ public class UserEquipment extends BaseEntity {
 
   @Override
   protected final EntityType getEntityType() {
-    return USER_EQUIPMENT;
+    return TYPE;
   }
 
   @Override
