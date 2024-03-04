@@ -66,7 +66,10 @@ class ClientCommunicatorTCPTest {
   }
 
   private void closeServerSocket() throws IOException {
-    new ClientCommunicatorTCP(LOCALHOST, serverSocket.getLocalPort()).sendMessage(new CloseBrokerDto());
+    try (final ClientCommunicator client =
+        new ClientCommunicatorTCP(LOCALHOST, serverSocket.getLocalPort())) {
+      client.sendMessage(new CloseBrokerDto());
+    }
     serverSocket.close();
     client.close();
   }

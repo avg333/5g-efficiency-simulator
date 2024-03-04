@@ -15,7 +15,8 @@ public class ClientCommunicatorUDP extends BaseClientCommunicator {
   private final DatagramSocket sc;
   private final InetAddress ad;
 
-  public ClientCommunicatorUDP(final DatagramSocket sc, final InetAddress ad, final int portBroker) {
+  public ClientCommunicatorUDP(
+      final DatagramSocket sc, final InetAddress ad, final int portBroker) {
     try {
       this.sc = sc;
       this.sc.setSoTimeout(TIMEOUT);
