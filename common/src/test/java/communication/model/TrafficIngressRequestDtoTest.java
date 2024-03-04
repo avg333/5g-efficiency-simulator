@@ -4,7 +4,6 @@ import static org.instancio.Select.field;
 
 import communication.model.base.BaseDtoTest;
 import communication.model.base.Dto;
-import java.io.IOException;
 import java.util.List;
 import org.instancio.Instancio;
 import org.msgpack.core.MessageUnpacker;
@@ -19,7 +18,7 @@ class TrafficIngressRequestDtoTest extends BaseDtoTest {
   }
 
   @Override
-  protected Dto createResult(final MessageUnpacker messageUnpacker) throws IOException {
+  protected Dto createResult(final MessageUnpacker messageUnpacker) {
     return new TrafficIngressRequestDto();
   }
 }

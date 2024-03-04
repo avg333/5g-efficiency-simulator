@@ -7,10 +7,12 @@ import communication.model.base.Dto;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+@Slf4j
 class ClientCommunicatorTCPTest {
 
   private static final int RANDOM_FREE_PORT = 0;
@@ -27,7 +29,7 @@ class ClientCommunicatorTCPTest {
               try {
                 setupClientInServer();
               } catch (IOException e) {
-                e.printStackTrace();
+                log.error("Error in setupClientInServer", e);
               }
             })
         .start();

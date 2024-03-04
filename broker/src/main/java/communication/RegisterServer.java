@@ -10,9 +10,7 @@ import domain.Position;
 import domain.entities.Bs;
 import domain.entities.Entity;
 import domain.entities.Ue;
-import exception.MessageProcessingException;
 import exception.NotSupportedActionException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -49,16 +47,10 @@ public abstract class RegisterServer {
   }
 
   private void closeRegisterServer(final Dto dto) {
-    try {
-      sendCloseMsgToServer(dto);
-    } catch (IOException e) {
-      log.error("Failed to stop the register server", e);
-      closeSockets();
-      throw new MessageProcessingException("Failed to stop the register server", e);
-    }
+    sendCloseMsgToServer(dto);
   }
 
-  protected abstract void sendCloseMsgToServer(Dto dto) throws IOException;
+  protected abstract void sendCloseMsgToServer(Dto dto);
 
   protected abstract void runServer();
 

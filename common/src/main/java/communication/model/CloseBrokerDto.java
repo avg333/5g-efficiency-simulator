@@ -2,7 +2,6 @@ package communication.model;
 
 import communication.model.base.Dto;
 import communication.model.base.DtoIdentifier;
-import java.io.IOException;
 import org.msgpack.core.MessageBufferPacker;
 
 public class CloseBrokerDto extends Dto {
@@ -14,7 +13,7 @@ public class CloseBrokerDto extends Dto {
   }
 
   @Override
-  protected final void map(final MessageBufferPacker messageBufferPacker) throws IOException {
+  protected final void map(final MessageBufferPacker messageBufferPacker) {
     // No data to pack
   }
 }

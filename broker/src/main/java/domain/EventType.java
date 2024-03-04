@@ -5,5 +5,5 @@ public enum EventType {
   TRAFFIC_ROUTE,
   TRAFFIC_ARRIVE,
   TRAFFIC_EGRESS,
-  NEW_STATE;
+  NEW_STATE
 }
