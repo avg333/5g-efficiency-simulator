@@ -74,6 +74,7 @@ public class EventLogger implements AutoCloseable {
       }
     } catch (final InterruptedException e) {
       log.error("Error while taking log from queue", e);
+      Thread.currentThread().interrupt();
       throw new LogQueueException(e);
     } catch (final IOException e) {
       log.error("Failed to print log", e);
