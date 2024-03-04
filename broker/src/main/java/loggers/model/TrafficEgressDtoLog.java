@@ -9,9 +9,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TrafficEgressDtoLog implements BaseDtoLog {
 
-  private static final String LOG_LINE =
-      "%.2f BS %d TRAFFIC_EGRESS id=%d size=%.2f q=%.2f wait=%.2f";
-
   private final double t;
   private final Bs bs;
   private final long taskId;
@@ -21,7 +18,17 @@ public class TrafficEgressDtoLog implements BaseDtoLog {
 
   @Override
   public final String getLogLine() {
-    return String.format(LOG_LINE, t, bs.getId(), taskId, taskSize, q, w);
+    return t
+        + " BS "
+        + bs.getId()
+        + " TRAFFIC_EGRESS id="
+        + taskId
+        + " size="
+        + taskSize
+        + " q="
+        + q
+        + " wait="
+        + w;
   }
 
   @Override

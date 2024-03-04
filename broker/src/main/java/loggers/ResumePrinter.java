@@ -19,9 +19,14 @@ public class ResumePrinter {
   private static final String FILE_NAME = "resume";
   private static final String EXTENSION = "txt";
 
+  private final BrokerState state;
   private final boolean printCsv;
+  private final boolean printResume;
 
-  public void print(final double elapsedTime, final BrokerState state) {
+  public void print(final double elapsedTime) {
+    if (!printResume) {
+      return;
+    }
 
     try (final BufferedWriter writer =
         new BufferedWriter(new FileWriter(getFileName(FILE_NAME, EXTENSION)))) {
@@ -35,7 +40,7 @@ public class ResumePrinter {
         writer.write(getUeResume(ue));
       }
     } catch (final IOException e) {
-      log.error("Failed to print resume.txt file.", e);
+      log.error("Failed to print {} file.", getFileName(FILE_NAME, EXTENSION), e);
     }
   }
 

@@ -1,9 +1,9 @@
 package loggers;
 
 import static java.util.Objects.nonNull;
-import static utils.BrokerUtils.getFileName;
 
 import exception.CsvWriterException;
+import exception.LogQueueException;
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -13,8 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class EventLogger implements AutoCloseable {
-  private static final String FILE_NAME = "events";
-  private static final String EXTENSION = "csv";
 
   private final boolean printCsv;
   private final boolean printLog;
@@ -32,10 +30,21 @@ public class EventLogger implements AutoCloseable {
     this.printLog = printLog;
   }
 
+  public final void log(final BaseDtoLog baseDtoLog) {
+    if (printCsv || printLog) {
+      queue.add(baseDtoLog);
+    }
+  }
+
+  @Override
+  public final void close() {
+    queue.add(new PoisonPillDto());
+  }
+
   private void initializeCsvWriter() {
     try {
-      eventPrinter = new EventPrinter(getFileName(FILE_NAME, EXTENSION));
-    } catch (IOException e) {
+      eventPrinter = new EventPrinter();
+    } catch (final IOException e) {
       log.error("Failed to initialize CSV writer", e);
       throw new CsvWriterException("Failed to initialize CSV writer", e);
     }
@@ -44,13 +53,14 @@ public class EventLogger implements AutoCloseable {
   private void start() {
     Thread.startVirtualThread(
         () -> {
-          while (true) {
-            if (runner()) return;
+          boolean shouldContinue = true;
+          while (shouldContinue) {
+            shouldContinue = !logDaemon();
           }
         });
   }
 
-  private boolean runner() {
+  private boolean logDaemon() {
     try {
       final BaseDtoLog dto = queue.take();
       if (dto instanceof PoisonPillDto) {
@@ -62,21 +72,13 @@ public class EventLogger implements AutoCloseable {
       if (printCsv) {
         eventPrinter.printDtoLog(dto.toCsvDtoLog());
       }
-    } catch (InterruptedException | IOException e) {
-      log.error("Failed to process log", e);
-      throw new RuntimeException(e);
+    } catch (final InterruptedException e) {
+      log.error("Error while taking log from queue", e);
+      throw new LogQueueException(e);
+    } catch (final IOException e) {
+      log.error("Failed to print log", e);
+      throw new CsvWriterException("Failed to print log", e);
     }
     return false;
-  }
-
-  public void log(final BaseDtoLog baseDtoLog) {
-    if (printCsv || printLog) {
-      queue.add(baseDtoLog);
-    }
-  }
-
-  @Override
-  public void close() {
-    queue.add(new PoisonPillDto());
   }
 }

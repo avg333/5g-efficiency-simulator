@@ -15,7 +15,6 @@ public class BrokerFactory {
 
     final int port = Integer.parseInt(config.getString("port"));
     final boolean communicatorModeTCP = Boolean.parseBoolean(config.getString("tcp"));
-    final boolean eventsLog = Boolean.parseBoolean(config.getString("eventsLog"));
     final RoutingAlgorithmMode routingAlgorithmMode =
         RoutingAlgorithmMode.getRoutingAlgorithmModeTypeByCode(
             config.getString("routingAlgorithmMode").charAt(0));
@@ -25,6 +24,9 @@ public class BrokerFactory {
     final RegisterServer server =
         (communicatorModeTCP) ? new RegisterServerTCP(port) : new RegisterServerUDP(port);
 
-    return new Broker(server, bsRouter, tFinal, eventsLog);
+    final BrokerConfig brokerConfig =
+        new BrokerConfig(true, Boolean.parseBoolean(config.getString("eventsLog")), true, tFinal);
+
+    return new Broker(brokerConfig, server, bsRouter);
   }
 }

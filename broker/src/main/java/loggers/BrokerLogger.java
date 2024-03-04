@@ -1,5 +1,6 @@
 package loggers;
 
+import broker.BrokerConfig;
 import broker.BrokerState;
 import loggers.model.BaseDtoLog;
 import lombok.extern.slf4j.Slf4j;
@@ -7,23 +8,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class BrokerLogger implements AutoCloseable {
   private final double startTime = System.currentTimeMillis();
-  private final boolean printResume;
-  private final boolean printCsv;
-  private final BrokerState state;
+  private final ResumePrinter resumePrinter;
   private final EventLogger eventLogger;
   private final ProgressBarLogger progressBarLogger;
 
-  public BrokerLogger(
-      final boolean printResume,
-      final boolean printCsv,
-      final boolean progressBar,
-      final double finalT,
-      final BrokerState state) {
-    this.printResume = printResume;
-    this.printCsv = printCsv;
-    this.state = state;
-    this.eventLogger = new EventLogger(printCsv, log.isDebugEnabled());
-    this.progressBarLogger = new ProgressBarLogger(progressBar, finalT);
+  public BrokerLogger(final BrokerConfig config, final BrokerState state) {
+    this.resumePrinter = new ResumePrinter(state, config.printCsv(), config.printResume());
+    this.eventLogger = new EventLogger(config.printCsv(), log.isDebugEnabled());
+    this.progressBarLogger = new ProgressBarLogger(config.progressBar(), config.finalT());
   }
 
   public void upgradeProgress(final double t) {
@@ -38,9 +30,7 @@ public class BrokerLogger implements AutoCloseable {
   public void close() {
     final double executionTime = System.currentTimeMillis() - startTime;
     log.info("End of simulation. Execution time: {}s", executionTime / 1000);
-    if (printResume) {
-      new ResumePrinter(printCsv).print(executionTime, state);
-    }
+    resumePrinter.print(executionTime);
     progressBarLogger.close();
     eventLogger.close();
   }

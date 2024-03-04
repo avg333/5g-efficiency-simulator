@@ -34,7 +34,9 @@ public class RegisterServerTCP extends RegisterServer {
 
   @Override
   protected void sendCloseMsgToServer(final Dto dto) {
-    new ClientCommunicatorTCP(LOCALHOST, port).sendMessage(dto);
+    try (final ClientCommunicator clientCommunicator = new ClientCommunicatorTCP(LOCALHOST, port)) {
+      clientCommunicator.sendMessage(dto);
+    }
   }
 
   protected final void close() {

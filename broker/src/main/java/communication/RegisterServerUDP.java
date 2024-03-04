@@ -1,5 +1,7 @@
 package communication;
 
+import static utils.Utils.closeResource;
+
 import communication.model.base.Dto;
 import communication.model.factory.DtoFactory;
 import java.net.DatagramPacket;
@@ -45,17 +47,13 @@ public class RegisterServerUDP extends RegisterServer {
 
   @Override
   protected void sendCloseMsgToServer(final Dto dto) {
-    new ClientCommunicatorUDP(LOCALHOST, port).sendMessage(dto);
+    try (final ClientCommunicator clientCommunicator = new ClientCommunicatorUDP(LOCALHOST, port)) {
+      clientCommunicator.sendMessage(dto);
+    }
   }
 
   @Override
   protected final void close() {
-    try {
-      if (sc != null && !sc.isClosed()) {
-        sc.close();
-      }
-    } catch (Exception e) {
-      log.error("Failed to shut down the server. Execution completed", e);
-    }
+    closeResource(sc, "DatagramSocket");
   }
 }

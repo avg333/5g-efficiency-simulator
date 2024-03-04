@@ -11,9 +11,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TrafficRouteDtoLog implements BaseDtoLog {
 
-  private static final String LOG_LINE =
-      "%.2f BK 0 TRAFFIC_ROUTE id=%d size=%.2f from-ue=%d to-bs=%d";
-
   private final double t;
   private final Ue ue;
   private final Bs bs;
@@ -21,7 +18,15 @@ public class TrafficRouteDtoLog implements BaseDtoLog {
 
   @Override
   public final String getLogLine() {
-    return String.format(LOG_LINE, t, task.id(), task.size(), ue.getId(), bs.getId());
+    return t
+        + " BK 0 TRAFFIC_ROUTE id="
+        + task.id()
+        + " size="
+        + task.size()
+        + " from-ue="
+        + ue.getId()
+        + " to-bs="
+        + bs.getId();
   }
 
   @Override

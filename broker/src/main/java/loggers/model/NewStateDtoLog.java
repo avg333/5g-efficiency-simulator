@@ -10,8 +10,6 @@ import types.EntityType;
 @RequiredArgsConstructor
 public class NewStateDtoLog implements BaseDtoLog {
 
-  private static final String LOG_LINE = "%.2f BS %d NEW_STATE q=%.2f state=%s";
-
   private final double t;
   private final Bs bs;
   private final double q;
@@ -19,7 +17,7 @@ public class NewStateDtoLog implements BaseDtoLog {
 
   @Override
   public final String getLogLine() {
-    return String.format(LOG_LINE, t, bs.getId(), q, state);
+    return t + " BS " + bs.getId() + " NEW_STATE q=" + q + " state=" + state;
   }
 
   @Override

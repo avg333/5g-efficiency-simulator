@@ -10,24 +10,25 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TrafficIngressDtoLog implements BaseDtoLog {
 
-  private static final String LOG_LINE =
-      "%.2f entity=USER_EQUIPMENT %d event=TRAFFIC_INGRESS id=%d size=%.2f next=%.2f x=%.2f y=%.2f";
-
   private final double t;
   private final Ue ue;
   private final Task task;
 
   @Override
   public final String getLogLine() {
-    return String.format(
-        LOG_LINE,
-        t,
-        ue.getId(),
-        task.id(),
-        task.size(),
-        task.tUntilNextTask(),
-        ue.getPosition().x(),
-        ue.getPosition().y());
+    return t
+        + " entity=USER_EQUIPMENT "
+        + ue.getId()
+        + " event=TRAFFIC_INGRESS id="
+        + task.id()
+        + " size="
+        + task.size()
+        + " next="
+        + task.tUntilNextTask()
+        + " x="
+        + ue.getPosition().x()
+        + " y="
+        + ue.getPosition().y();
   }
 
   @Override

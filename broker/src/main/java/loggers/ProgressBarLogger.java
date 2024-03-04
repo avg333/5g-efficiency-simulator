@@ -10,16 +10,19 @@ public class ProgressBarLogger implements AutoCloseable {
   private static final String TASK_NAME = "Simulation progress";
 
   private final boolean progressBar;
-  private final double tFinal;
-  private ProgressBar pbb;
+  private final long tFinal;
+  private final ProgressBar pbb;
 
-  public ProgressBarLogger(final boolean progressBar, final double finalT) {
-    if (progressBar) {
-      pbb = new ProgressBarBuilder().setTaskName(TASK_NAME).setInitialMax((long) finalT).build();
+  public ProgressBarLogger(final boolean progressBar, final double tFinal) {
+    this.tFinal = (long) tFinal;
+    this.pbb =
+        progressBar
+            ? new ProgressBarBuilder().setTaskName(TASK_NAME).setInitialMax(this.tFinal).build()
+            : null;
+    this.progressBar = nonNull(pbb);
+    if (this.progressBar) {
       pbb.getStart();
     }
-    this.progressBar = nonNull(progressBar);
-    this.tFinal = finalT;
   }
 
   public void upgradeProgress(final double t) {
@@ -31,7 +34,7 @@ public class ProgressBarLogger implements AutoCloseable {
   @Override
   public void close() {
     if (progressBar) {
-      pbb.stepTo((long) tFinal);
+      pbb.stepTo(tFinal);
       pbb.close();
     }
   }

@@ -42,12 +42,12 @@ import types.BsStateType;
 @RequiredArgsConstructor
 public class Broker implements Runnable {
 
+  private final BrokerConfig config;
   private final RegisterServer server;
   private final BsRouter bsRouter;
-  private final double tFinal;
-  private final boolean printCsv;
-  private BrokerLogger brokerLogger;
+
   private BrokerState state;
+  private BrokerLogger brokerLogger;
 
   public static void main(final String[] args) {
     new Thread(new BrokerFactory().createBroker()).start();
@@ -56,9 +56,9 @@ public class Broker implements Runnable {
   @Override
   public void run() {
     state = new BrokerState(server.getEntities());
-    brokerLogger = new BrokerLogger(true, printCsv, true, tFinal, state);
+    brokerLogger = new BrokerLogger(config, state);
 
-    while (state.getT() <= tFinal) {
+    while (state.getT() <= config.finalT()) {
       processEvent(state.pollNextElement());
       brokerLogger.upgradeProgress(state.getT());
     }

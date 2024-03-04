@@ -1,5 +1,6 @@
 package loggers;
 
+import static utils.BrokerUtils.getFileName;
 import static utils.Utils.closeResource;
 
 import java.io.FileWriter;
@@ -9,12 +10,14 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
 public class EventPrinter implements AutoCloseable {
+  private static final String FILE_NAME = "events";
+  private static final String EXTENSION = "csv";
 
   private final FileWriter out;
   private final CSVPrinter csvPrinter;
 
-  public EventPrinter(final String fileName) throws IOException {
-    out = new FileWriter(fileName);
+  public EventPrinter() throws IOException {
+    out = new FileWriter(getFileName(FILE_NAME, EXTENSION));
     csvPrinter =
         new CSVPrinter(out, CSVFormat.DEFAULT.builder().setHeader(BaseCsvDtoLog.COLUMNS).build());
   }
