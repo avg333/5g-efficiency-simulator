@@ -21,7 +21,14 @@ public class Distribution {
     return switch (distributionMode) {
       case DETERMINISTIC -> param1;
       case UNIFORM -> rand.nextDouble() * (param1 - param2) + param2;
-      case EXPONENTIAL -> param1 != 0 ? Math.log(1 - rand.nextDouble()) / (-param1) : 0;
+      case EXPONENTIAL ->
+          param1 != 0
+              ? Math.log(1 - rand.nextDouble()) / (-param1)
+              : throwExceptionWhenDivisionByZero();
     };
+  }
+
+  private double throwExceptionWhenDivisionByZero() {
+    throw new IllegalArgumentException("param1 cannot be zero for exponential distribution");
   }
 }
