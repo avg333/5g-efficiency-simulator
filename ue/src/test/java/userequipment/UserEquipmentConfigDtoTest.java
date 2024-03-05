@@ -66,5 +66,6 @@ class UserEquipmentConfigDtoTest {
     assertThat(config.getDelayDistributionMode()).isEqualTo(expectedDelayDistributionMode);
     assertThat(config.getDelayDistributionParam1()).isEqualTo(expectedDelayDistributionParam1);
     assertThat(config.getDelayDistributionParam2()).isEqualTo(expectedDelayDistributionParam2);
+    assertThat(config.call()).isZero();
   }
 }
