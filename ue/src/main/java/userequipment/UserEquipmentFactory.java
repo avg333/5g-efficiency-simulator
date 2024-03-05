@@ -17,19 +17,19 @@ public class UserEquipmentFactory {
   public UserEquipment createUserEquipment(final String[] args) {
     final UserEquipmentConfigDto config = createConfigDto(args);
 
-    Distribution mobilityDist =
+    final Distribution mobilityDist =
         new Distribution(
             DistributionMode.fromCode(config.getMobilityDistributionMode()),
             config.getMobilityDistributionParam1(),
             config.getMobilityDistributionParam2());
 
-    Distribution delayDist =
+    final Distribution delayDist =
         new Distribution(
             DistributionMode.fromCode(config.getDelayDistributionMode()),
             config.getDelayDistributionParam1(),
             config.getDelayDistributionParam2());
 
-    Distribution sizeDist =
+    final Distribution sizeDist =
         new Distribution(
             DistributionMode.fromCode(config.getSizeDistributionMode()),
             config.getSizeDistributionParam1(),
@@ -54,7 +54,7 @@ public class UserEquipmentFactory {
     return config;
   }
 
-  private ClientCommunicator createClientCommunicator(UserEquipmentConfigDto config) {
+  private ClientCommunicator createClientCommunicator(final UserEquipmentConfigDto config) {
     return CommunicatorMode.fromCode(config.getCommunicatorMode()) == CommunicatorMode.TCP
         ? new ClientCommunicatorTCP(config.getBrokerIp(), config.getBrokerPort())
         : new ClientCommunicatorUDP(config.getBrokerIp(), config.getBrokerPort());

@@ -19,13 +19,13 @@ public class BaseStationFactory {
         createBaseConfig(config));
   }
 
-  private BaseStationConfigDto createConfigDto(String[] args) {
+  private BaseStationConfigDto createConfigDto(final String[] args) {
     final BaseStationConfigDto config = new BaseStationConfigDto();
     new CommandLine(config).execute(args);
     return config;
   }
 
-  private BaseStationConfig createBaseConfig(BaseStationConfigDto config) {
+  private BaseStationConfig createBaseConfig(final BaseStationConfigDto config) {
     return new BaseStationConfig(
         AlgorithmMode.fromCode(config.getAlgorithmMode()),
         config.getProcessingCapacity(),
@@ -35,7 +35,7 @@ public class BaseStationFactory {
         config.getAlgorithmParam());
   }
 
-  private ClientCommunicator createClientCommunicator(BaseStationConfigDto config) {
+  private ClientCommunicator createClientCommunicator(final BaseStationConfigDto config) {
     return CommunicatorMode.fromCode(config.getCommunicatorMode()) == CommunicatorMode.TCP
         ? new ClientCommunicatorTCP(config.getBrokerIp(), config.getBrokerPort())
         : new ClientCommunicatorUDP(config.getBrokerIp(), config.getBrokerPort());
