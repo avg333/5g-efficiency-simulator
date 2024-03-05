@@ -7,16 +7,16 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum AlgorithmMode {
-  NO_COALESCING('n'),
-  SIZE_BASED_COALESCING('s'),
-  TIME_BASED_COALESCING('t'),
-  FIXED_COALESCING('f');
+  NO_COALESCING("n"),
+  SIZE_BASED_COALESCING("s"),
+  TIME_BASED_COALESCING("t"),
+  FIXED_COALESCING("f");
 
-  private final char value;
+  private final String value;
 
-  public static AlgorithmMode getModeTypeByCode(final char code) {
+  public static AlgorithmMode fromCode(final String code) {
     return Arrays.stream(AlgorithmMode.values())
-        .filter(e -> e.value == code)
+        .filter(e -> e.value.equals(code))
         .findAny()
         .orElseThrow(
             () ->

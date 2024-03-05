@@ -1,7 +1,7 @@
 package loggers;
 
 import static utils.BrokerUtils.getFileName;
-import static utils.Utils.closeResource;
+import static utils.CommonUtils.closeResource;
 
 import java.io.FileWriter;
 import java.io.IOException;

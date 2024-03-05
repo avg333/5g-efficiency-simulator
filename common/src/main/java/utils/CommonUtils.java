@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @UtilityClass
-public class Utils {
+public class CommonUtils {
 
   public static void closeResource(final AutoCloseable resource, final String resourceName) {
     if (nonNull(resource)) {

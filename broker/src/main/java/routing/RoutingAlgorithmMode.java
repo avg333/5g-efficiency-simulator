@@ -7,13 +7,13 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum RoutingAlgorithmMode {
-  DISTANCE_VECTOR('v');
+  DISTANCE_VECTOR("v");
 
-  private final char value;
+  private final String value;
 
-  public static RoutingAlgorithmMode getRoutingAlgorithmModeTypeByCode(final char code) {
+  public static RoutingAlgorithmMode fromCode(final String code) {
     return Arrays.stream(RoutingAlgorithmMode.values())
-        .filter(e -> e.value == code)
+        .filter(e -> e.value.equals(code))
         .findFirst()
         .orElseThrow(
             () ->

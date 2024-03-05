@@ -1,32 +1,38 @@
 package broker;
 
+import communication.CommunicatorMode;
 import communication.RegisterServer;
 import communication.RegisterServerTCP;
 import communication.RegisterServerUDP;
-import config.Config;
+import picocli.CommandLine;
 import routing.BsRouter;
 import routing.RoutingAlgorithmMode;
 
 public class BrokerFactory {
-  private static final String PROP_FILE_NAME = "config.properties";
+  public Broker createBroker(final String[] args) {
+    final BrokerConfigDto config = createConfigDto(args);
 
-  public Broker createBroker() {
-    final Config config = new Config(PROP_FILE_NAME);
+    return new Broker(
+        createBrokerConfig(config), createRegisterServer(config), createBsRouter(config));
+  }
 
-    final int port = Integer.parseInt(config.getString("port"));
-    final boolean communicatorModeTCP = Boolean.parseBoolean(config.getString("tcp"));
-    final RoutingAlgorithmMode routingAlgorithmMode =
-        RoutingAlgorithmMode.getRoutingAlgorithmModeTypeByCode(
-            config.getString("routingAlgorithmMode").charAt(0));
-    final BsRouter bsRouter = new BsRouter(routingAlgorithmMode);
-    final double tFinal = Double.parseDouble(config.getString("tFinal"));
+  private BrokerConfig createBrokerConfig(final BrokerConfigDto config) {
+    return new BrokerConfig(true, config.isEventsLog(), true, config.getTFinal());
+  }
 
-    final RegisterServer server =
-        (communicatorModeTCP) ? new RegisterServerTCP(port) : new RegisterServerUDP(port);
+  private BsRouter createBsRouter(BrokerConfigDto config) {
+    return new BsRouter(RoutingAlgorithmMode.fromCode(config.getRoutingAlgorithmMode()));
+  }
 
-    final BrokerConfig brokerConfig =
-        new BrokerConfig(true, Boolean.parseBoolean(config.getString("eventsLog")), true, tFinal);
+  private BrokerConfigDto createConfigDto(final String[] args) {
+    final BrokerConfigDto config = new BrokerConfigDto();
+    new CommandLine(config).execute(args);
+    return config;
+  }
 
-    return new Broker(brokerConfig, server, bsRouter);
+  private RegisterServer createRegisterServer(final BrokerConfigDto config) {
+    return CommunicatorMode.fromCode(config.getCommunicatorMode()) == CommunicatorMode.TCP
+        ? new RegisterServerTCP(config.getPort())
+        : new RegisterServerUDP(config.getPort());
   }
 }

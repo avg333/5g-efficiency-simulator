@@ -18,11 +18,9 @@ import types.EntityType;
 public class UserEquipment extends BaseEntity {
 
   private static final EntityType TYPE = USER_EQUIPMENT;
-
   private static final int MSG_LEN = getMaxMsgLen(TRAFFIC_INGRESS_REQUEST);
 
   private final Distribution mobilityDist;
-
   private final TaskGenerator taskGenerator;
 
   public UserEquipment(
@@ -42,7 +40,7 @@ public class UserEquipment extends BaseEntity {
   }
 
   public static void main(final String[] args) {
-    new Thread(new UserEquipmentFactory().createUserEquipment()).start();
+    new Thread(new UserEquipmentFactory().createUserEquipment(args)).start();
   }
 
   @Override

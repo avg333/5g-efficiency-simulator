@@ -7,15 +7,15 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum DistributionMode {
-  DETERMINISTIC('d'),
-  UNIFORM('u'),
-  EXPONENTIAL('e');
+  DETERMINISTIC("d"),
+  UNIFORM("u"),
+  EXPONENTIAL("e");
 
-  private final char value;
+  private final String value;
 
-  public static DistributionMode getDistributionModeByCode(final char code) {
+  public static DistributionMode fromCode(final String code) {
     return Arrays.stream(DistributionMode.values())
-        .filter(e -> e.value == code)
+        .filter(e -> e.value.equals(code))
         .findAny()
         .orElseThrow(
             () ->

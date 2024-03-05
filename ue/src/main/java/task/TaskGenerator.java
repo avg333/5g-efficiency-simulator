@@ -9,10 +9,9 @@ import lombok.ToString;
 public class TaskGenerator {
 
   private final Distribution sizeDist;
-
   private final Distribution delayDist;
 
-  public Task generateTask() {
+  public final Task generateTask() {
     return new Task(sizeDist.getRandom(), delayDist.getRandom());
   }
 }

@@ -50,7 +50,7 @@ public class Broker implements Runnable {
   private BrokerLogger brokerLogger;
 
   public static void main(final String[] args) {
-    new Thread(new BrokerFactory().createBroker()).start();
+    new Thread(new BrokerFactory().createBroker(args)).start();
   }
 
   @Override

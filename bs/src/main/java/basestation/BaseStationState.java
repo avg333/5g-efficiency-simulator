@@ -11,6 +11,7 @@ import types.BsStateType;
 
 public class BaseStationState {
   private static final BsStateType DEFAULT_STATE = BsStateType.OFF;
+
   private final Deque<Task> tasksPending = new ArrayDeque<>();
   private double lastTaskArrivalTime = 0.0;
   private Task currentTask = null;

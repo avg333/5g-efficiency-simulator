@@ -1,6 +1,6 @@
 package communication;
 
-import static utils.Utils.closeResource;
+import static utils.CommonUtils.closeResource;
 
 import communication.model.base.Dto;
 import communication.model.factory.DtoFactory;

@@ -15,6 +15,16 @@ class DistributionTest {
   private Distribution distribution;
 
   @Test
+  void shouldSetSeedSuccessfully() {
+    final long seed = Instancio.create(Long.class);
+    final Distribution distribution1 = new Distribution(DistributionMode.UNIFORM, 0, 1);
+    distribution1.setSeed(seed);
+    final Distribution distribution2 = new Distribution(DistributionMode.UNIFORM, 0, 1);
+    distribution2.setSeed(seed);
+    assertThat(distribution1.getRandom()).isEqualTo(distribution2.getRandom());
+  }
+
+  @Test
   void getRandomReturnsParam1WhenDistributionModeIsDeterministic() {
     final double param1 = Instancio.create(Double.class);
     final double param2 = Instancio.create(Double.class);

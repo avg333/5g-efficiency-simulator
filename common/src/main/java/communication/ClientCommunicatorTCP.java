@@ -1,6 +1,6 @@
 package communication;
 
-import static utils.Utils.closeResource;
+import static utils.CommonUtils.closeResource;
 
 import exception.CommunicatorCreationException;
 import java.io.DataInputStream;

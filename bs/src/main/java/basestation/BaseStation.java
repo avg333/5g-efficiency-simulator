@@ -32,17 +32,14 @@ import utils.BaseStationUtils;
 @Slf4j
 public class BaseStation extends BaseEntity {
 
-  private static final EntityType TYPE = BASE_STATION;
-
   private static final int TIME_TO_ENTER_HYSTERESIS = 0;
   private static final int TIME_TO_EXIT_HYSTERESIS = 0;
   private static final int TIME_TO_SUSPEND = 0;
-
+  private static final EntityType TYPE = BASE_STATION;
   private static final int MSG_LEN =
       getMaxMsgLen(TRAFFIC_ARRIVAL_REQUEST, TRAFFIC_EGRESS_REQUEST, NEW_STATE_RESPONSE);
 
   private final BaseStationConfig baseStationConfig;
-
   private final BaseStationState state = new BaseStationState();
 
   public BaseStation(
@@ -59,7 +56,7 @@ public class BaseStation extends BaseEntity {
   }
 
   public static void main(final String[] args) {
-    new Thread(new BaseStationFactory().createBaseStation()).start();
+    new Thread(new BaseStationFactory().createBaseStation(args)).start();
   }
 
   @Override

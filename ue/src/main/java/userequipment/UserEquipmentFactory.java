@@ -1,59 +1,62 @@
 package userequipment;
 
+import static java.util.Objects.nonNull;
+
 import communication.ClientCommunicator;
 import communication.ClientCommunicatorTCP;
 import communication.ClientCommunicatorUDP;
-import config.Config;
+import communication.CommunicatorMode;
 import distribution.Distribution;
 import distribution.DistributionMode;
 import domain.Position;
+import picocli.CommandLine;
 import task.TaskGenerator;
 
 public class UserEquipmentFactory {
 
-  private static final String PROP_FILE_NAME = "config.properties";
-
-  public UserEquipment createUserEquipment() {
-    Config config = new Config(PROP_FILE_NAME);
-
-    Position position = new Position(config.getDouble("x"), config.getDouble("y"));
+  public UserEquipment createUserEquipment(final String[] args) {
+    final UserEquipmentConfigDto config = createConfigDto(args);
 
     Distribution mobilityDist =
         new Distribution(
-            DistributionMode.getDistributionModeByCode(
-                config.getString("mobilityDistributionMode").charAt(0)),
-            config.getDouble("mobilityDistributionParam1"),
-            config.getDouble("mobilityDistributionParam2"));
+            DistributionMode.fromCode(config.getMobilityDistributionMode()),
+            config.getMobilityDistributionParam1(),
+            config.getMobilityDistributionParam2());
 
     Distribution delayDist =
         new Distribution(
-            DistributionMode.getDistributionModeByCode(
-                config.getString("delayDistributionMode").charAt(0)),
-            config.getDouble("delayDistributionParam1"),
-            config.getDouble("delayDistributionParam2"));
+            DistributionMode.fromCode(config.getDelayDistributionMode()),
+            config.getDelayDistributionParam1(),
+            config.getDelayDistributionParam2());
 
     Distribution sizeDist =
         new Distribution(
-            DistributionMode.getDistributionModeByCode(
-                config.getString("sizeDistributionMode").charAt(0)),
-            config.getDouble("sizeDistributionParam1"),
-            config.getDouble("sizeDistributionParam2"));
+            DistributionMode.fromCode(config.getSizeDistributionMode()),
+            config.getSizeDistributionParam1(),
+            config.getSizeDistributionParam2());
 
-    int seed = config.getInt("seed");
-
-    if (seed != 0) {
-      sizeDist.setSeed(seed);
-      delayDist.setSeed(seed + 1L);
-      mobilityDist.setSeed(seed + 2L);
+    if (nonNull(config.getSeed())) {
+      sizeDist.setSeed(config.getSeed());
+      delayDist.setSeed(config.getSeed() + 1L);
+      mobilityDist.setSeed(config.getSeed() + 2L);
     }
 
-    TaskGenerator taskGenerator = new TaskGenerator(sizeDist, delayDist);
+    return new UserEquipment(
+        createClientCommunicator(config),
+        new Position(config.getPositionX(), config.getPositionY()),
+        mobilityDist,
+        new TaskGenerator(sizeDist, delayDist));
+  }
 
-    ClientCommunicator communicator =
-        config.getBoolean("tcp")
-            ? new ClientCommunicatorTCP(config.getString("ipBroker"), config.getInt("portBroker"))
-            : new ClientCommunicatorUDP(config.getString("ipBroker"), config.getInt("portBroker"));
+  private UserEquipmentConfigDto createConfigDto(final String[] args) {
+    final UserEquipmentConfigDto config = new UserEquipmentConfigDto();
+    new CommandLine(config).execute(args);
+    return config;
+  }
 
-    return new UserEquipment(communicator, position, mobilityDist, taskGenerator);
+  private ClientCommunicator createClientCommunicator(UserEquipmentConfigDto config) {
+    return CommunicatorMode.fromCode(config.getCommunicatorMode()) == CommunicatorMode.TCP
+        ? new ClientCommunicatorTCP(config.getBrokerIp(), config.getBrokerPort())
+        : new ClientCommunicatorUDP(config.getBrokerIp(), config.getBrokerPort());
   }
 }
