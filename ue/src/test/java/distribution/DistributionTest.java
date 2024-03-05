@@ -39,6 +39,7 @@ class DistributionTest {
     final double param1 = Instancio.create(Double.class);
     final double param2 = Instancio.create(Double.class);
     distribution = new Distribution(DistributionMode.UNIFORM, param1, param2);
+    distribution.setSeed(3000);
 
     double sum = 0.0;
     for (int i = 0; i < NUM_TESTS; i++) {
@@ -57,6 +58,7 @@ class DistributionTest {
     final double param1 = 1.0;
     final double param2 = 2.0;
     distribution = new Distribution(DistributionMode.EXPONENTIAL, param1, param2);
+    distribution.setSeed(3000);
 
     double sum = 0.0;
     for (int i = 0; i < NUM_TESTS; i++) {
