@@ -12,7 +12,7 @@ class DistributionModeTest {
 
   @ParameterizedTest
   @EnumSource(DistributionMode.class)
-  void shouldGetDistributionModeByCodeSuccessfully(final DistributionMode mode) {
+  void shouldGetDistributionModeByValueSuccessfully(final DistributionMode mode) {
     assertThat(DistributionMode.fromValue(mode.getValue())).isEqualTo(mode);
   }
 

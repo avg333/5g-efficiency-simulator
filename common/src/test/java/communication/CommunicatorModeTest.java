@@ -1,7 +1,7 @@
 package communication;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
@@ -12,13 +12,15 @@ class CommunicatorModeTest {
 
   @ParameterizedTest
   @EnumSource(CommunicatorMode.class)
-  void shouldGetDistributionModeByCodeSuccessfully(final CommunicatorMode mode) {
-    assertThat(CommunicatorMode.fromCode(mode.getValue())).isEqualTo(mode);
+  void shouldGetCommunicatorModeByCodeSuccessfully(final CommunicatorMode mode) {
+    assertThat(CommunicatorMode.fromValue(mode.getValue())).isEqualTo(mode);
   }
 
   @Test
-  void testGetDistributionModeByCodeUnsupported() {
-    final String unsupportedCode = Instancio.create(String.class);
-    assertThrows(IllegalArgumentException.class, () -> CommunicatorMode.fromCode(unsupportedCode));
+  void shouldThrowIllegalArgumentExceptionWhenCommunicatorModeIsObtainedFromWrongValue() {
+    final String unsupportedValue = Instancio.create(String.class);
+    assertThatThrownBy(() -> CommunicatorMode.fromValue(unsupportedValue))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(unsupportedValue);
   }
 }

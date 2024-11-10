@@ -60,8 +60,8 @@ public class TrafficEgressResponseDto extends Dto {
 
   public TrafficEgressResponseDto(final MessageUnpacker messageUnpacker) throws IOException {
     this(
-        BsStateType.fromCode(messageUnpacker.unpackByte()),
-        BsStateType.fromCode(messageUnpacker.unpackByte()),
+        BsStateType.fromValue(messageUnpacker.unpackByte()),
+        BsStateType.fromValue(messageUnpacker.unpackByte()),
         messageUnpacker.unpackDouble(),
         messageUnpacker.unpackBoolean()
             ? messageUnpacker.unpackDouble()

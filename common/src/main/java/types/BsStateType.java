@@ -21,10 +21,10 @@ public enum BsStateType {
           .collect(Collectors.toMap(BsStateType::getValue, stateType -> stateType));
   private final byte value;
 
-  public static BsStateType fromCode(final byte code) {
-    final BsStateType result = BY_VALUE_MAP.get(code);
+  public static BsStateType fromValue(final byte value) {
+    final BsStateType result = BY_VALUE_MAP.get(value);
     if (result == null) {
-      throw new IllegalArgumentException("Value " + code + " not supported for the bs state type");
+      throw new IllegalArgumentException("Value " + value + " not supported for the bs state type");
     }
     return result;
   }

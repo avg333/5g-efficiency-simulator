@@ -36,7 +36,7 @@ public class BaseStationFactory {
   }
 
   private ClientCommunicator createClientCommunicator(final BaseStationConfigDto config) {
-    return CommunicatorMode.fromCode(config.getCommunicatorMode()) == CommunicatorMode.TCP
+    return CommunicatorMode.fromValue(config.getCommunicatorMode()) == CommunicatorMode.TCP
         ? new ClientCommunicatorTCP(config.getBrokerIp(), config.getBrokerPort())
         : new ClientCommunicatorUDP(config.getBrokerIp(), config.getBrokerPort());
   }

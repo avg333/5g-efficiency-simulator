@@ -2,7 +2,6 @@ package algorithm;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
 
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
@@ -13,7 +12,7 @@ class AlgorithmModeTest {
 
   @ParameterizedTest
   @EnumSource(AlgorithmMode.class)
-  void shouldGetAlgorithmModeByCodeSuccessfully(final AlgorithmMode mode) {
+  void shouldGetAlgorithmModeByValueSuccessfully(final AlgorithmMode mode) {
     assertThat(AlgorithmMode.fromValue(mode.getValue())).isEqualTo(mode);
   }
 

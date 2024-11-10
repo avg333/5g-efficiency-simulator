@@ -11,13 +11,13 @@ public enum RoutingAlgorithmMode {
 
   private final String value;
 
-  public static RoutingAlgorithmMode fromCode(final String code) {
-    return Arrays.stream(RoutingAlgorithmMode.values())
-        .filter(e -> e.value.equals(code))
-        .findFirst()
+  public static RoutingAlgorithmMode fromValue(final String value) {
+    return Arrays.stream(values())
+        .filter(e -> e.value.equals(value))
+        .findAny()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Value " + code + " not supported for the routing algorithm"));
+                    "Value " + value + " not supported for the routing algorithm"));
   }
 }

@@ -55,7 +55,7 @@ public class UserEquipmentFactory {
   }
 
   private ClientCommunicator createClientCommunicator(final UserEquipmentConfigDto config) {
-    return CommunicatorMode.fromCode(config.getCommunicatorMode()) == CommunicatorMode.TCP
+    return CommunicatorMode.fromValue(config.getCommunicatorMode()) == CommunicatorMode.TCP
         ? new ClientCommunicatorTCP(config.getBrokerIp(), config.getBrokerPort())
         : new ClientCommunicatorUDP(config.getBrokerIp(), config.getBrokerPort());
   }

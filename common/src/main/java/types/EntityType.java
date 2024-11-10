@@ -13,13 +13,13 @@ public enum EntityType {
 
   private final int value;
 
-  public static EntityType fromCode(final int code) {
+  public static EntityType fromValue(final int value) {
     return Arrays.stream(values())
-        .filter(communicatorType -> communicatorType.getValue() == code)
-        .findFirst()
+        .filter(communicatorType -> communicatorType.getValue() == value)
+        .findAny()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Value " + code + " not supported for the communicator type"));
+                    "Value " + value + " not supported for the communicator type"));
   }
 }

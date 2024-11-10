@@ -14,7 +14,7 @@ public class CommonUtils {
       try {
         resource.close();
       } catch (final Exception e) {
-        log.error("Error trying to close the " + resourceName + ".", e);
+        log.error("Error trying to close the {}.", resourceName, e);
       }
     }
   }

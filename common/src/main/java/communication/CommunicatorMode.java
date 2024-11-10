@@ -12,13 +12,13 @@ public enum CommunicatorMode {
 
   private final String value;
 
-  public static CommunicatorMode fromCode(final String code) {
-    return Arrays.stream(CommunicatorMode.values())
-        .filter(e -> e.value.equals(code))
+  public static CommunicatorMode fromValue(final String value) {
+    return Arrays.stream(values())
+        .filter(e -> e.value.equals(value))
         .findAny()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Value " + code + " not supported for the communicator type"));
+                    "Value " + value + " not supported for the communicator type"));
   }
 }

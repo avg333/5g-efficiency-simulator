@@ -21,7 +21,7 @@ public class NewStateRequestDto extends Dto {
   }
 
   public NewStateRequestDto(final MessageUnpacker messageUnpacker) throws IOException {
-    this(BsStateType.fromCode(messageUnpacker.unpackByte()));
+    this(BsStateType.fromValue(messageUnpacker.unpackByte()));
   }
 
   @Override
