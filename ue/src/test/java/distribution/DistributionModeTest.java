@@ -1,7 +1,7 @@
 package distribution;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
@@ -13,12 +13,14 @@ class DistributionModeTest {
   @ParameterizedTest
   @EnumSource(DistributionMode.class)
   void shouldGetDistributionModeByCodeSuccessfully(final DistributionMode mode) {
-    assertThat(DistributionMode.fromCode(mode.getValue())).isEqualTo(mode);
+    assertThat(DistributionMode.fromValue(mode.getValue())).isEqualTo(mode);
   }
 
   @Test
-  void testGetDistributionModeByCodeUnsupported() {
-    final String unsupportedCode = Instancio.create(String.class);
-    assertThrows(IllegalArgumentException.class, () -> DistributionMode.fromCode(unsupportedCode));
+  void shouldThrowIllegalArgumentExceptionWhenDistributionModeIsObtainedFromWrongValue() {
+    final String unsupportedValue = Instancio.create(String.class);
+    assertThatThrownBy(() -> DistributionMode.fromValue(unsupportedValue))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(unsupportedValue);
   }
 }

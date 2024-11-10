@@ -13,13 +13,13 @@ public enum DistributionMode {
 
   private final String value;
 
-  public static DistributionMode fromCode(final String code) {
+  public static DistributionMode fromValue(final String value) {
     return Arrays.stream(DistributionMode.values())
-        .filter(e -> e.value.equals(code))
+        .filter(distributionMode -> distributionMode.value.equals(value))
         .findAny()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Value " + code + " not supported for the distribution type"));
+                    "Value " + value + " not supported for the distribution type"));
   }
 }

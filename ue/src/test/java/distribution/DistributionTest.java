@@ -6,22 +6,26 @@ import static org.assertj.core.api.Assertions.within;
 
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 class DistributionTest {
 
-  private static final int NUM_TESTS = 10000000;
-  private static final double DELTA = 0.3;
+  private static final int NUM_TESTS = 1000000;
+  private static final long SEED = 3000;
+  private static final double DELTA = 0.001;
 
   private Distribution distribution;
 
-  @Test
-  void shouldSetSeedSuccessfully() {
+  @ParameterizedTest
+  @EnumSource(DistributionMode.class)
+  void shouldSetSeedSuccessfully(DistributionMode distributionMode) {
     final long seed = Instancio.create(Long.class);
     final double param1 = Instancio.create(Double.class);
     final double param2 = Instancio.create(Double.class);
-    final Distribution distribution1 = new Distribution(DistributionMode.UNIFORM, param1, param2);
+    final Distribution distribution1 = new Distribution(distributionMode, param1, param2);
     distribution1.setSeed(seed);
-    final Distribution distribution2 = new Distribution(DistributionMode.UNIFORM, param1, param2);
+    final Distribution distribution2 = new Distribution(distributionMode, param1, param2);
     distribution2.setSeed(seed);
     assertThat(distribution1.getRandom()).isEqualTo(distribution2.getRandom());
   }
@@ -36,10 +40,10 @@ class DistributionTest {
 
   @Test
   void getRandomReturnsValueInRangeWhenDistributionModeIsUniform() {
-    final double param1 = Instancio.create(Double.class);
-    final double param2 = Instancio.create(Double.class);
+    final double param1 = 1.0;
+    final double param2 = 2.0;
     distribution = new Distribution(DistributionMode.UNIFORM, param1, param2);
-    distribution.setSeed(3000);
+    distribution.setSeed(SEED);
 
     double sum = 0.0;
     for (int i = 0; i < NUM_TESTS; i++) {
@@ -58,7 +62,7 @@ class DistributionTest {
     final double param1 = 1.0;
     final double param2 = 2.0;
     distribution = new Distribution(DistributionMode.EXPONENTIAL, param1, param2);
-    distribution.setSeed(3000);
+    distribution.setSeed(SEED);
 
     double sum = 0.0;
     for (int i = 0; i < NUM_TESTS; i++) {
@@ -78,6 +82,6 @@ class DistributionTest {
         new Distribution(DistributionMode.EXPONENTIAL, 0.0, Instancio.create(Double.class));
     assertThatThrownBy(distribution::getRandom)
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("param1 cannot be zero for exponential distribution");
+        .hasMessage("param1 can not be zero for exponential distribution");
   }
 }

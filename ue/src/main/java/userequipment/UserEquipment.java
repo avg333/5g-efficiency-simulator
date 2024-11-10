@@ -17,8 +17,8 @@ import types.EntityType;
 @Slf4j
 public class UserEquipment extends BaseEntity {
 
-  private static final EntityType TYPE = USER_EQUIPMENT;
-  private static final int MSG_LEN = getMaxMsgLen(TRAFFIC_INGRESS_REQUEST);
+  private static final EntityType ENTITY_TYPE = USER_EQUIPMENT;
+  private static final int MAX_MSG_LEN = getMaxMsgLen(TRAFFIC_INGRESS_REQUEST);
 
   private final Distribution mobilityDist;
   private final TaskGenerator taskGenerator;
@@ -45,12 +45,12 @@ public class UserEquipment extends BaseEntity {
 
   @Override
   protected final int getMsgLen() {
-    return MSG_LEN;
+    return MAX_MSG_LEN;
   }
 
   @Override
   protected final EntityType getEntityType() {
-    return TYPE;
+    return ENTITY_TYPE;
   }
 
   @Override
@@ -66,7 +66,7 @@ public class UserEquipment extends BaseEntity {
    * The broker then redirects it to a base station.
    * The method also includes the time when the user equipment will generate the next task.
    */
-  protected Dto processTrafficIngress() {
+  private Dto processTrafficIngress() {
     final Task task = taskGenerator.generateTask();
     position.move(mobilityDist.getRandom(), mobilityDist.getRandom());
     log.debug("Generated task {} in position {}", task, position);

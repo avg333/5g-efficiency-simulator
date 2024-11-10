@@ -19,19 +19,19 @@ public class UserEquipmentFactory {
 
     final Distribution mobilityDist =
         new Distribution(
-            DistributionMode.fromCode(config.getMobilityDistributionMode()),
+            DistributionMode.fromValue(config.getMobilityDistributionMode()),
             config.getMobilityDistributionParam1(),
             config.getMobilityDistributionParam2());
 
     final Distribution delayDist =
         new Distribution(
-            DistributionMode.fromCode(config.getDelayDistributionMode()),
+            DistributionMode.fromValue(config.getDelayDistributionMode()),
             config.getDelayDistributionParam1(),
             config.getDelayDistributionParam2());
 
     final Distribution sizeDist =
         new Distribution(
-            DistributionMode.fromCode(config.getSizeDistributionMode()),
+            DistributionMode.fromValue(config.getSizeDistributionMode()),
             config.getSizeDistributionParam1(),
             config.getSizeDistributionParam2());
 

@@ -13,11 +13,11 @@ public class Distribution {
   private final double param1;
   private final double param2;
 
-  public final void setSeed(final long seed) {
+  public void setSeed(final long seed) {
     rand.setSeed(seed);
   }
 
-  public final double getRandom() {
+  public double getRandom() {
     return switch (distributionMode) {
       case DETERMINISTIC -> param1;
       case UNIFORM -> rand.nextDouble() * (param1 - param2) + param2;
@@ -29,6 +29,6 @@ public class Distribution {
   }
 
   private double throwExceptionWhenDivisionByZero() {
-    throw new IllegalArgumentException("param1 cannot be zero for exponential distribution");
+    throw new IllegalArgumentException("param1 can not be zero for exponential distribution");
   }
 }
