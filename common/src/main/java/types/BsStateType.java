@@ -1,8 +1,8 @@
 package types;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -17,7 +17,8 @@ public enum BsStateType {
   WAITING_TO_ON((byte) 6);
 
   private static final Map<Byte, BsStateType> BY_VALUE_MAP =
-      Stream.of(values()).collect(Collectors.toMap(BsStateType::getValue, stateType -> stateType));
+      Arrays.stream(values())
+          .collect(Collectors.toMap(BsStateType::getValue, stateType -> stateType));
   private final byte value;
 
   public static BsStateType fromCode(final byte code) {

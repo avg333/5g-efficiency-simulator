@@ -1,8 +1,8 @@
 package communication.model.base;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -26,7 +26,7 @@ public enum DtoIdentifier {
   ;
 
   private static final Map<Byte, DtoIdentifier> BY_CODE_MAP =
-      Stream.of(values()).collect(Collectors.toMap(DtoIdentifier::getCode, id -> id));
+      Arrays.stream(values()).collect(Collectors.toMap(DtoIdentifier::getCode, id -> id));
   private final byte code;
   private final int size;
 

@@ -7,7 +7,7 @@ import communication.model.base.Dto;
 import communication.model.base.DtoIdentifier;
 import domain.Position;
 import exception.NotSupportedActionException;
-import java.util.stream.Stream;
+import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 import types.EntityType;
 
@@ -22,7 +22,7 @@ public abstract class BaseEntity extends BaseClient implements Runnable {
   }
 
   protected static int getMaxMsgLen(final DtoIdentifier... actions) {
-    return Stream.of(actions).mapToInt(DtoIdentifier::getSize).max().orElse(0);
+    return Arrays.stream(actions).mapToInt(DtoIdentifier::getSize).max().orElse(0);
   }
 
   protected abstract int getMsgLen();

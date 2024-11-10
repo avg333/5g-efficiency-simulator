@@ -14,7 +14,7 @@ public enum DistributionMode {
   private final String value;
 
   public static DistributionMode fromValue(final String value) {
-    return Arrays.stream(DistributionMode.values())
+    return Arrays.stream(values())
         .filter(distributionMode -> distributionMode.value.equals(value))
         .findAny()
         .orElseThrow(

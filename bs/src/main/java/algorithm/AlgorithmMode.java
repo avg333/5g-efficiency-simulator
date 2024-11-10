@@ -15,7 +15,7 @@ public enum AlgorithmMode {
   private final String value;
 
   public static AlgorithmMode fromValue(final String value) {
-    return Arrays.stream(AlgorithmMode.values())
+    return Arrays.stream(values())
         .filter(algorithmMode -> algorithmMode.value.equals(value))
         .findAny()
         .orElseThrow(
