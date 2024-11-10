@@ -14,13 +14,13 @@ public enum AlgorithmMode {
 
   private final String value;
 
-  public static AlgorithmMode fromCode(final String code) {
+  public static AlgorithmMode fromValue(final String value) {
     return Arrays.stream(AlgorithmMode.values())
-        .filter(e -> e.value.equals(code))
+        .filter(algorithmMode -> algorithmMode.value.equals(value))
         .findAny()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Value " + code + " not supported for the algorithm mode"));
+                    "Value " + value + " not supported for the algorithm mode"));
   }
 }

@@ -2,6 +2,8 @@ package basestation;
 
 import static java.util.Objects.isNull;
 
+import exception.NoCurrentTaskException;
+import exception.NoPendingTasksException;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import lombok.Getter;
@@ -27,11 +29,19 @@ public class BaseStationState {
   }
 
   public Task processNextTask() {
+    if (tasksPending.isEmpty()) { // This can never happen
+      throw new NoPendingTasksException();
+    }
+
     currentTask = tasksPending.poll();
     return currentTask;
   }
 
   public Task processCurrentTask() {
+    if (isNull(currentTask)) { // Can happen only if receive TRAFFIC_EGRESS_REQUEST incorrectly
+      throw new NoCurrentTaskException();
+    }
+
     final Task processedTask = currentTask;
     currentTask = null;
     return processedTask;

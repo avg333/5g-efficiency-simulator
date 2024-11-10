@@ -27,7 +27,7 @@ public class BaseStationFactory {
 
   private BaseStationConfig createBaseConfig(final BaseStationConfigDto config) {
     return new BaseStationConfig(
-        AlgorithmMode.fromCode(config.getAlgorithmMode()),
+        AlgorithmMode.fromValue(config.getAlgorithmMode()),
         config.getProcessingCapacity(),
         config.getTimeToOff(),
         config.getTimeToOn(),

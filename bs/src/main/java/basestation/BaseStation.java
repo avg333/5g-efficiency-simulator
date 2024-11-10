@@ -35,8 +35,8 @@ public class BaseStation extends BaseEntity {
   private static final int TIME_TO_ENTER_HYSTERESIS = 0;
   private static final int TIME_TO_EXIT_HYSTERESIS = 0;
   private static final int TIME_TO_SUSPEND = 0;
-  private static final EntityType TYPE = BASE_STATION;
-  private static final int MSG_LEN =
+  private static final EntityType ENTITY_TYPE = BASE_STATION;
+  private static final int MAX_MSG_LEN =
       getMaxMsgLen(TRAFFIC_ARRIVAL_REQUEST, TRAFFIC_EGRESS_REQUEST, NEW_STATE_RESPONSE);
 
   private final BaseStationConfig baseStationConfig;
@@ -61,12 +61,12 @@ public class BaseStation extends BaseEntity {
 
   @Override
   protected final int getMsgLen() {
-    return MSG_LEN;
+    return MAX_MSG_LEN;
   }
 
   @Override
   protected final EntityType getEntityType() {
-    return TYPE;
+    return ENTITY_TYPE;
   }
 
   @Override

@@ -1,8 +1,13 @@
 package basestation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import exception.NoCurrentTaskException;
+import exception.NoPendingTasksException;
+import java.util.List;
 import org.instancio.Instancio;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -11,10 +16,15 @@ import types.BsStateType;
 
 class BaseStationStateTest {
 
+  private BaseStationState state;
+
+  @BeforeEach
+  void setUp() {
+    state = new BaseStationState();
+  }
+
   @Test
   void shouldAddAndProcessTasks() {
-    final BaseStationState state = new BaseStationState();
-
     assertThat(state.isIdle()).isTrue();
     assertThat(state.hasTasksPending()).isFalse();
     assertThat(state.getQ()).isZero();
@@ -60,18 +70,75 @@ class BaseStationStateTest {
 
   @ParameterizedTest
   @EnumSource(BsStateType.class)
-  void shouldUpdateState(final BsStateType stateType) {
-    final BaseStationState state = new BaseStationState();
-
+  void shouldUpdateStateSuccessfully(final BsStateType stateType) {
     assertThat(state.getState()).isEqualTo(BsStateType.OFF);
     assertThat(state.getNextState()).isEqualTo(BsStateType.OFF);
+    if (stateType != BsStateType.OFF) {
+      assertThat(state.isCurrentState(stateType)).isFalse();
+    }
 
     state.setState(stateType);
     state.setNextState(stateType);
+    assertThat(state.isCurrentState(stateType)).isTrue();
     assertThat(state.getState()).isEqualTo(stateType);
     assertThat(state.getNextState()).isEqualTo(stateType);
+  }
 
-    final BsStateType randomState = Instancio.create(BsStateType.class);
-    assertThat(state.isCurrentState(randomState)).isEqualTo(stateType == randomState);
+  @ParameterizedTest
+  @EnumSource(BsStateType.class)
+  void isCurrentStateShouldBeTrueWhenParamStateIsEqualsToBsState(final BsStateType paramState) {
+    final BsStateType currentState = Instancio.create(BsStateType.class);
+
+    state.setState(currentState);
+
+    assertThat(state.isCurrentState(paramState)).isEqualTo(paramState == currentState);
+  }
+
+  @Test
+  void isIdleShouldBeTrueWhenThereIsOneTaskBeingProcessed() {
+    assertThat(state.isIdle()).isTrue();
+
+    state.addTask(Instancio.create(Task.class));
+    assertThat(state.isIdle()).isTrue();
+
+    state.processNextTask();
+    assertThat(state.isIdle()).isFalse();
+
+    state.processCurrentTask();
+    assertThat(state.isIdle()).isTrue();
+  }
+
+  @Test
+  void hasTasksPendingShouldBeTrueWhenTasksQueueIsNotEmpty() {
+    assertThat(state.hasTasksPending()).isFalse();
+
+    state.addTask(Instancio.create(Task.class));
+    assertThat(state.hasTasksPending()).isTrue();
+
+    state.processNextTask();
+    assertThat(state.hasTasksPending()).isFalse();
+
+    state.processCurrentTask();
+    assertThat(state.hasTasksPending()).isFalse();
+  }
+
+  @Test
+  void getQShouldBeEqualToSumOfTasksSizeOfTasksQueue() {
+    final List<Task> tasks = Instancio.createList(Task.class);
+    final double totalTasksSize = tasks.stream().mapToDouble(Task::size).sum();
+
+    tasks.forEach(task -> state.addTask(task));
+
+    assertThat(state.getQ()).isEqualTo(totalTasksSize);
+  }
+
+  @Test
+  void shouldThrowNoPendingTasksExceptionWhenTryingToProcessNextTaskWithEmptyTaskQueue() {
+    assertThatThrownBy(() -> state.processNextTask()).isInstanceOf(NoPendingTasksException.class);
+  }
+
+  @Test
+  void shouldThrowNoCurrentTaskExceptionWhenTryingToProcessCurrentTaskWhenThereIsNoCurrentTask() {
+    assertThatThrownBy(() -> state.processCurrentTask()).isInstanceOf(NoCurrentTaskException.class);
   }
 }

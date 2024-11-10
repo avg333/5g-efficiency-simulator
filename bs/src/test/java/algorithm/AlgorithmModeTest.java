@@ -1,6 +1,7 @@
 package algorithm;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.instancio.Instancio;
@@ -13,12 +14,14 @@ class AlgorithmModeTest {
   @ParameterizedTest
   @EnumSource(AlgorithmMode.class)
   void shouldGetAlgorithmModeByCodeSuccessfully(final AlgorithmMode mode) {
-    assertThat(AlgorithmMode.fromCode(mode.getValue())).isEqualTo(mode);
+    assertThat(AlgorithmMode.fromValue(mode.getValue())).isEqualTo(mode);
   }
 
   @Test
-  void testGetDistributionModeByCodeUnsupported() {
-    final String unsupportedCode = Instancio.create(String.class);
-    assertThrows(IllegalArgumentException.class, () -> AlgorithmMode.fromCode(unsupportedCode));
+  void shouldThrowIllegalArgumentExceptionWhenAlgorithmModeIsObtainedFromWrongValue() {
+    final String unsupportedValue = Instancio.create(String.class);
+    assertThatThrownBy(() -> AlgorithmMode.fromValue(unsupportedValue))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(unsupportedValue);
   }
 }
