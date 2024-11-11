@@ -33,8 +33,6 @@ public abstract class BaseClientCommunicator implements ClientCommunicator {
       return dtoFactory.createDto(receive(dataLen));
     } catch (final IOException e) {
       log.error("Error trying to receive a message", e);
-      // TODO: Import KO
-      this.close();
       throw new MessageProcessingException("Error trying to receive a message", e);
     }
   }
@@ -44,8 +42,6 @@ public abstract class BaseClientCommunicator implements ClientCommunicator {
       send(dto.toByteArray());
     } catch (final IOException e) {
       log.error("Error trying to send a message", e);
-      // TODO: Import KO
-      this.close();
       throw new MessageProcessingException("Error trying to send a message", e);
     }
   }
