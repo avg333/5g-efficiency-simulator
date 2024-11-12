@@ -16,7 +16,7 @@ public abstract class BaseDtoTest {
       try (final MessageUnpacker messageUnpacker =
           MessagePack.newDefaultUnpacker(dto.toByteArray())) {
 
-        assertThat(DtoIdentifier.fromCode(messageUnpacker.unpackByte()))
+        assertThat(DtoIdentifier.fromValue(messageUnpacker.unpackByte()))
             .isEqualTo(dto.getIdentifier());
         assertThat(createResult(messageUnpacker))
             .isNotNull()
@@ -30,7 +30,7 @@ public abstract class BaseDtoTest {
   @Test
   protected final void checkSize() throws IOException {
     for (final Dto dto : createDtos()) {
-      final int expectedSize = DtoIdentifier.fromCode(dto.getIdentifier().getCode()).getSize();
+      final int expectedSize = DtoIdentifier.fromValue(dto.getIdentifier().getValue()).getSize();
 
       assertThat(dto.toByteArray())
           .isNotNull()

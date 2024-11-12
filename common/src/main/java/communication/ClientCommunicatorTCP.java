@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ClientCommunicatorTCP extends BaseClientCommunicator {
+
   private final Socket clientSocket;
   private final DataOutputStream out;
   private final DataInputStream in;
@@ -22,7 +23,8 @@ public class ClientCommunicatorTCP extends BaseClientCommunicator {
       this.out = new DataOutputStream(clientSocket.getOutputStream());
       this.in = new DataInputStream(clientSocket.getInputStream());
     } catch (IOException e) {
-      log.error("Error trying to create the socket", e);
+      log.error("Error trying to create the TCP client communicator", e);
+      this.close();
       throw new CommunicatorCreationException(e);
     }
   }
@@ -35,7 +37,7 @@ public class ClientCommunicatorTCP extends BaseClientCommunicator {
     try {
       return new Socket(ip, port);
     } catch (IOException e) {
-      log.error("Error trying to create the socket", e);
+      log.error("Error trying to create the Socket", e);
       throw new CommunicatorCreationException(e);
     }
   }

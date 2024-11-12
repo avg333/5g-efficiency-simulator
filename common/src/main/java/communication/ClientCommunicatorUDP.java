@@ -1,6 +1,6 @@
 package communication;
 
-import static java.util.Objects.nonNull;
+import static utils.CommonUtils.closeResource;
 
 import exception.CommunicatorCreationException;
 import java.io.IOException;
@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ClientCommunicatorUDP extends BaseClientCommunicator {
+
   private final int portBroker;
   private final DatagramSocket sc;
   private final InetAddress ad;
@@ -23,7 +24,7 @@ public class ClientCommunicatorUDP extends BaseClientCommunicator {
       this.ad = ad;
       this.portBroker = portBroker;
     } catch (IOException e) {
-      log.error("Error trying to create the communicator", e);
+      log.error("Error trying to create the UDP client communicator", e);
       this.close();
       throw new CommunicatorCreationException(e);
     }
@@ -37,7 +38,7 @@ public class ClientCommunicatorUDP extends BaseClientCommunicator {
     try {
       return new DatagramSocket();
     } catch (IOException e) {
-      log.error("Error trying to create the socket", e);
+      log.error("Error trying to create the DatagramSocket", e);
       throw new CommunicatorCreationException(e);
     }
   }
@@ -65,13 +66,7 @@ public class ClientCommunicatorUDP extends BaseClientCommunicator {
 
   @Override
   public final void close() {
-    if (nonNull(sc) && !sc.isClosed()) {
-      try {
-        sc.close();
-      } catch (Exception e) {
-        log.error("Error trying to close the socket", e);
-      }
-    }
+    closeResource(sc, "socket");
   }
 
   @Override

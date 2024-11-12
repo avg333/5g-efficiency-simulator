@@ -22,7 +22,7 @@ public class DtoFactory {
 
   public Dto createDto(final byte[] bytes) throws IOException {
     try (final MessageUnpacker messageUnpacker = MessagePack.newDefaultUnpacker(bytes)) {
-      return switch (DtoIdentifier.fromCode(messageUnpacker.unpackByte())) {
+      return switch (DtoIdentifier.fromValue(messageUnpacker.unpackByte())) {
         case REGISTER_REQUEST -> new RegisterRequestDto(messageUnpacker);
         case REGISTER_RESPONSE -> new RegisterResponseDto(messageUnpacker);
         case CLOSE_BROKER -> new CloseBrokerDto();

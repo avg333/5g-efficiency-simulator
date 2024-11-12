@@ -26,11 +26,11 @@ public enum DtoIdentifier {
   ;
 
   private static final Map<Byte, DtoIdentifier> BY_CODE_MAP =
-      Arrays.stream(values()).collect(Collectors.toMap(DtoIdentifier::getCode, id -> id));
-  private final byte code;
+      Arrays.stream(values()).collect(Collectors.toMap(DtoIdentifier::getValue, id -> id));
+  private final byte value;
   private final int size;
 
-  public static DtoIdentifier fromCode(final byte code) {
+  public static DtoIdentifier fromValue(final byte code) {
     final DtoIdentifier result = BY_CODE_MAP.get(code);
     if (result == null) {
       throw new IllegalArgumentException("Unknown dto identifier code: " + code);

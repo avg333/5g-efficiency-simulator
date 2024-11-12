@@ -12,8 +12,11 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public abstract class BaseClientCommunicator implements ClientCommunicator {
+
   protected static final int TIMEOUT = 0;
+
   private static final int REGISTER_RESPONSE_SIZE = REGISTER_RESPONSE.getSize();
+
   private final DtoFactory dtoFactory = new DtoFactory();
 
   public final void register(final RegisterRequestDto dto) {

@@ -12,14 +12,14 @@ class DtoIdentifierTest {
   @ParameterizedTest
   @EnumSource(DtoIdentifier.class)
   void shouldGetDtoIdentifierByValueSuccessfully(final DtoIdentifier mode) {
-    assertThat(DtoIdentifier.fromCode(mode.getCode())).isEqualTo(mode);
+    assertThat(DtoIdentifier.fromValue(mode.getValue())).isEqualTo(mode);
   }
 
   @Test
-  void shouldThrowIllegalArgumentExceptionWhenDtoIdentifierIsObtainedFromWrongCode() {
-    final byte unsupportedCode = (byte) 12;
-    assertThatThrownBy(() -> DtoIdentifier.fromCode(unsupportedCode))
+  void shouldThrowIllegalArgumentExceptionWhenDtoIdentifierIsObtainedFromWrongValue() {
+    final byte unsupportedValue = (byte) 12;
+    assertThatThrownBy(() -> DtoIdentifier.fromValue(unsupportedValue))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining(String.valueOf(unsupportedCode));
+        .hasMessageContaining(String.valueOf(unsupportedValue));
   }
 }

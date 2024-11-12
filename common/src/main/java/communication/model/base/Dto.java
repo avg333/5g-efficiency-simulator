@@ -16,7 +16,7 @@ public abstract class Dto {
 
   public final byte[] toByteArray() throws IOException {
     try (final MessageBufferPacker messageBufferPacker = MessagePack.newDefaultBufferPacker()) {
-      messageBufferPacker.packByte(identifier.getCode());
+      messageBufferPacker.packByte(identifier.getValue());
       map(messageBufferPacker);
       return messageBufferPacker.toByteArray();
     }

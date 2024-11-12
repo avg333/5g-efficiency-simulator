@@ -51,7 +51,7 @@ public abstract class BaseEntity implements Runnable {
       }
 
     } catch (Exception e) {
-      log.error("", e);
+      log.error("Error in the execution:", e);
       // TODO Throw KO
       throw e;
     } finally {
