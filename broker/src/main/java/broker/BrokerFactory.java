@@ -2,6 +2,8 @@ package broker;
 
 import communication.CommunicatorMode;
 import communication.RegisterServer;
+import communication.RegisterServerTCP;
+import communication.RegisterServerUDP;
 import picocli.CommandLine;
 import routing.BsRouter;
 import routing.RoutingAlgorithmMode;
@@ -31,7 +33,7 @@ public class BrokerFactory {
 
   private RegisterServer createRegisterServer(final BrokerConfigDto config) {
     return CommunicatorMode.fromValue(config.getCommunicatorMode()) == CommunicatorMode.TCP
-        ? new RegisterServer(config.getPort())
-        : new RegisterServer(config.getPort());
+        ? new RegisterServerTCP(config.getPort())
+        : new RegisterServerUDP(config.getPort());
   }
 }
